@@ -1,25 +1,45 @@
 #include "GameScene.h"
 
 using namespace KamataEngine;
-
+// 初期化
 void GameScene::Initialize() {
 
-	//メンバ変数への初期化処理を書く
-	//ファイル名を指定してテクスチャを読み込む
-	textureHandle_ = TextureManager::Load("uvCheacker.png");
-
-	//3Dモデル生成
+	// ファイル名を指定してテクスチャを読み込む
+	textureHandle_ = TextureManager::Load("uvChecker.png");
+	// 3Dモデルデータの生成
 	model_ = Model::Create();
-
-
-	//ここにインゲームの初期化処理を書く
+	camera_ = new Camera();
+	// カメラの初期化
+	camera_->Initialize();
+	// 自キャラの生成
+	player_ = new Player();
+	// 自キャラの初期化
+	player_->Initialize(model_, textureHandle_, camera_);
 }
-
+// 更新
 void GameScene::Update() {
-	//ここにインゲームの更新処理を書く
+	// 自キャラの更新
+	player_->Update();
+}
+// 描画
+void GameScene::Draw() {
+	// DirectXCommonインスタンスの取得
+	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
+
+	// 自キャラの描画
+	model_->PreDraw(dxCommon->GetCommandList());
+	player_->Draw();
+	model_->PostDraw();
 }
 
-void GameScene::Draw() {
-	// 描画処理
-	
+// コンストラクタ
+GameScene::GameScene() {}
+
+// デストラクタ
+GameScene::~GameScene() {
+	// 3Dモデルデータの解散
+	delete model_;
+
+	// 自キャラの解散
+	delete player_;
 }
