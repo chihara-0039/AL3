@@ -4,6 +4,9 @@
 // ゲームシーン
 class GameScene {
 public:
+
+	//テクスチャハンドル
+	uint32_t textureHandle_ = 0;
 	// 初期化
 	void Initialize();
 
@@ -12,4 +15,9 @@ public:
 
 	// 描画
 	void Draw();
+
+private:
+	//3Dモデル
+	KamataEngine::Model* model_ = nullptr;
+
 };
