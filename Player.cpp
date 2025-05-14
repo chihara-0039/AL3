@@ -2,7 +2,7 @@
 #include <cassert>
 
 // 初期化
-void Player::Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Camera* camera) {
+void Player::Initialize(KamataEngine::Model* model, uint32_t textureHandle_, KamataEngine::Camera* camera) {
 	// NULLポインタチェック
 	assert(model);
 
@@ -13,20 +13,19 @@ void Player::Initialize(KamataEngine::Model* model, uint32_t textureHandle, Kama
 
 	// テクスチャハンドル
 	textureHandle_ = textureHandle;
-	worldTransform_.Initialize();
+	worldTransform.Initialize();
 }
 
 // 更新
 void Player::Update() {
 	// 行列を定数バッファに転送
-	worldTransform_.TransferMatrix(); // ここ最後
-	worldTransform_.TransferMatrix();
+	worldTransform.TransferMatrix(); // ここ最後
 }
 
 // 描画
 void Player::Draw() {
 
-	model_->Draw(worldTransform_, *camera_, textureHandle_);
+	model_->Draw(worldTransform, *camera_, textureHandle);
 
 	/////
 }
