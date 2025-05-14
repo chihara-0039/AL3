@@ -1,4 +1,5 @@
 #include "GameScene.h"
+#include "Skydome.h"
 
 using namespace KamataEngine;
 // 初期化
@@ -9,14 +10,23 @@ void GameScene::Initialize() {
 	// 3Dモデルデータの生成
 	model = Model::Create();
 	camera = new Camera();
+	modelSkydome_ = Model::CreateFromOBJ("skydome", true);
+
 	// カメラの初期化
 	camera->Initialize();
+
 	// 自キャラの生成
 	player_ = new Player();
 	// 自キャラの初期化
 	player_->Initialize(model, textureHandle, camera);
+
 	// 3Dモデルデータの生成(block)AL3_02_02
 	modelBlock = Model::Create();
+
+	//天球の作成
+	skydome_ = new Skydome();
+	// 天球の初期化
+	skydome_->Initialize();
 
 	// 初期化AL3_02_02
 	// 要素数AL3_02_02
@@ -64,6 +74,9 @@ void GameScene::Update() {
 		}
 	}
 
+	//天球の更新
+	skydome_->Update();
+
 #ifdef _DEBUG
 	// デバックの時Cキーを押すと状態が反転する
 	if (Input::GetInstance()->TriggerKey(DIK_C)) {
@@ -102,6 +115,8 @@ void GameScene::Draw() {
 		}
 	}
 
+	skydome_->Draw();
+
 	model->PostDraw();
 }
 // コンストラクタ
@@ -119,6 +134,12 @@ GameScene::~GameScene() {
 		}
 	}
 	worldTransformBlocks.clear();
+
+	//天球の解放
+	delete skydome_;
+
+	delete modelSkydome_;
+
 	// デバッグカメラの解放
 	delete debugCamera;
 }

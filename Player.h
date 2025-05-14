@@ -1,9 +1,12 @@
 #pragma once
 #include "KamataEngine.h"
+
+using namespace KamataEngine;
+
 class Player {
 public:
 	// 初期化
-	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Camera* camera);
+	void Initialize(Model* model, uint32_t textureHandle, Camera* camera);
 	// 更新
 	void Update();
 	// 描画
@@ -15,11 +18,11 @@ public:
 
 private: // C++ではメンバ変数は特別な理由がなければprivateにする
 	// ワールド変換データ
-	KamataEngine::WorldTransform worldTransform;
+	WorldTransform worldTransform;
 	// モデル
-	KamataEngine::Model* model_ = nullptr;
+	Model* model_ = nullptr;
 	// テクスチャハンドル
 	uint32_t textureHandle = 0u;
 	// カメラ
-	KamataEngine::Camera* camera_ = nullptr;
+	Camera* camera_ = nullptr;
 };
