@@ -31,5 +31,5 @@ private:
 	Model* model = nullptr;
 
 	// カメラ
-	Camera* camera_ = nullptr;
+	Camera* camera = nullptr;
 };
