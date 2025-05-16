@@ -1,5 +1,6 @@
 #pragma once
 #include "KamataEngine.h"
+#include "Math.h"
 
 using namespace KamataEngine;
 
@@ -8,10 +9,11 @@ using namespace KamataEngine;
 /// </summary>
 class Skydome {
 public:
+
 	/// <summary>
 	///	初期化
 	/// </summary>
-	void Initialize();
+	void Initialize(Model* model, Camera* camera);
 
 	/// <summary>
 	///	更新
@@ -28,8 +30,11 @@ private:
 	WorldTransform worldTransform_;
 
 	//モデル
-	Model* model = nullptr;
+	Model* model_ = nullptr;
 
 	// カメラ
-	Camera* camera = nullptr;
+	Camera* camera_ = nullptr;
+
+	//数学関数
+	Math math_;
 };
