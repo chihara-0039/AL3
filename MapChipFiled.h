@@ -12,6 +12,8 @@ enum class MapChipType {
 
 class MapChipField {
 public:
+	// メンバ変数
+	MapChipData mapChipData_;
 
 	void ResetMapChipData();
 
@@ -25,27 +27,17 @@ public:
 	static inline const uint32_t kNumBlockVirtical = 20;
 	static inline const uint32_t kNumBlockHorizontal = 100;
 
-	Vector3 GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) {
-		return Vector3(kBlockWidth * xIndex, kBlockHeight * (kNumBlockVirtical - 1 - yIndex), 0);
+	KamataEngine::Vector3 GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex)
+	{ return KamataEngine::Vector3(kBlockWidth * xIndex,
+								   kBlockHeight * (kNumBlockVirtical - 1 - yIndex), 0);
 
 	}
 
 private:
 
-	//メンバ変数
-	MapChipData mapChipData_;
-
-	
 	MapChipType GetMapChiptypeByIndex(uint32_t xIndex, uint32_t yIndex) {
-		if (xIndex < 0 || kNumBlockHorizontal - 1 < xIndex) {
-			return MapChipType::kBlank;
-		}
 
-		if (yIndex < 0 || kNumBlockVirtical - 1 < yIndex) {
-			return MapChipType::kBlank;
-		}
-
-		return mapChipData_.data[yIndex][xIndex];
 	}
+	
 	
 };
