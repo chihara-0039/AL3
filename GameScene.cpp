@@ -25,56 +25,27 @@ void GameScene::Initialize() {
 
 	// ファイル名を指定してテクスチャを読み込む
 	textureHandle_ = TextureManager::Load("sample.png");
-	// スプライトの生成
+	// スプライト生成
 	sprite_ = Sprite::Create(textureHandle_, {100, 50});
-	// 3Dモデルの生成
+	// 3Dモデル生成
 	model_ = Model::Create();
-	// ワールドトランスフォームの初期化
+	// ワールドトランスフォーム初期化
 	worldTransform_.Initialize();
-	// カメラの初期化
+
+	// カメラ初期化
 	camera_.Initialize();
 
-	// 02_01からの追加 プレイヤー生成
+	// 02_01から追加 プレイヤー生成
 	player_ = new Player();
+
 	// プレイヤーモデル
 	player_model_ = Model::CreateFromOBJ("player");
-	player_->Initialize(player_model_, textureHandle_, &camera_);
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(2, 18);
+
+	player_->Initialize(player_model_, &camera_, playerPosition);
 
 	// ブロックモデル
 	block_model_ = Model::CreateFromOBJ("block");
-	//	block_model_ = Model::Create();
-
-	/*
-	// 要素数
-	const uint32_t kNumBlockVirtical = 10;
-	const uint32_t kNumBlockHorizontal = 20;
-
-	// ブロック1個分の横幅
-	const float kBlockWidth = 1.0f;
-	const float kBlockHeight = 1.0f;
-
-	// 要素数を変更する
-	// 列数を設定（縦方向のブロック数）
-	worldTransformBlocks_.resize(kNumBlockVirtical);
-
-	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
-	    // 1列の要素数を設定（横方向のブロック数）
-	    worldTransformBlocks_[i].resize(kNumBlockHorizontal);
-	}
-
-	// ブロックの生成
-	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
-	    for (uint32_t j = 0; j < kNumBlockHorizontal; ++j) {
-
-	        if ((i + j) % 2 == 1)continue;
-
-	        worldTransformBlocks_[i][j] = new WorldTransform();
-	        worldTransformBlocks_[i][j]->Initialize();
-	        worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
-	        worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * i;
-	    }
-	}
-	*/
 
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
