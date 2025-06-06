@@ -1,37 +1,30 @@
 #include "Player.h"
+#include "Math.h"
 #include <cassert>
 
-// 初期化
-void Player::Initialize(KamataEngine::Model* model, uint32_t textureHandle_, KamataEngine::Camera* camera) {
-	// NULLポインタチェック
+void Player::Initialize(Model* model, uint32_t textureHandle, Camera* camera) {
+
 	assert(model);
-
+	// モデル
 	model_ = model;
-
-	// 引数の内容を記録
-	camera_ = camera;
 
 	// テクスチャハンドル
 	textureHandle_ = textureHandle;
-	worldTransform.Initialize();
+	worldTransform_.Initialize();
+	worldTransform_.translation_.x = 1.0f;
+	worldTransform_.translation_.y = 1.0f;
+
+	camera_ = camera;
 }
 
-// 更新
-void Player::Update() {
-	// 行列を定数バッファに転送
-	worldTransform.TransferMatrix(); // ここ最後
+void Player ::Update() {
+
+	// アフィン変換～DirectXに転送
+	WorldTransformUpdate(worldTransform_);
 }
 
-// 描画
-void Player::Draw() {
+void Player ::Draw() {
 
-	model_->Draw(worldTransform, *camera_, textureHandle);
-
-	/////
+	// モデル描画
+	model_->Draw(worldTransform_, *camera_);
 }
-
-// コンストラクタ
-Player::Player() {}
-
-// デストラクタ
-Player::~Player() {}

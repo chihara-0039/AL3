@@ -1,128 +1,171 @@
 #include "Math.h"
-#include <assert.h>
 #include <cmath>
+#include <numbers>
 
-using namespace KamataEngine;
-
-
-// 平行移動行列
-KamataEngine::Matrix4x4 Math::MakeTranslateMatrix(const KamataEngine::Vector3& translate) {
-	KamataEngine::Matrix4x4 result = {};
-	result.m[0][0] = 1.0f;
-	result.m[1][1] = 1.0f;
-	result.m[2][2] = 1.0f;
-	result.m[3][3] = 1.0f;
-	result.m[3][0] = translate.x;
-	result.m[3][1] = translate.y;
-	result.m[3][2] = translate.z;
-
-	return result;
+// 02_06の29枚目(CameraControllerのUpdate)で必要
+const Vector3 operator*(const Vector3& v1, const float f) {
+	Vector3 temp(v1);
+	return temp *= f;
 }
-// 拡大縮小行列
-KamataEngine::Matrix4x4 Math::Matrix4x4MakeScaleMatrix(const KamataEngine::Vector3& scale) {
-	KamataEngine::Matrix4x4 result = {};
-	result.m[0][0] = scale.x;
-	result.m[1][1] = scale.y;
-	result.m[2][2] = scale.z;
-	result.m[3][3] = 1.0f;
-	return result;
+
+// 02_06のCameraControllerのUpdate/Reset関数で必要
+const Vector3 operator+(const Vector3& v1, const Vector3& v2) {
+	Vector3 temp(v1);
+	return temp += v2;
 }
-// 座標変換行列
-KamataEngine::Vector3 Math::Transform(const KamataEngine::Vector3& vector, const KamataEngine::Matrix4x4& matrix) {
-	KamataEngine::Vector3 result;
-	result.x = vector.x * matrix.m[0][0] + vector.y * matrix.m[1][0] + vector.z * matrix.m[2][0] + 1.0f * matrix.m[3][0];
 
-	result.y = vector.x * matrix.m[0][1] + vector.y * matrix.m[1][1] + vector.z * matrix.m[2][1] + 1.0f * matrix.m[3][1];
+// 02_06のスライド24枚目のLerp関数
+Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) { return Vector3(Lerp(v1.x, v2.x, t), Lerp(v1.y, v2.y, t), Lerp(v1.z, v2.z, t)); }
 
-	result.z = vector.x * matrix.m[0][2] + vector.y * matrix.m[1][2] + vector.z * matrix.m[2][2] + 1.0f * matrix.m[3][2];
-
-	float w = vector.x * matrix.m[0][3] + vector.y * matrix.m[1][3] + vector.z * matrix.m[2][3] + 1.0f * matrix.m[3][3];
-	assert(w != 1.0f);
-	result.x /= w;
-	result.y /= w;
-	result.z /= w;
-
-	return result;
+Vector3& operator+=(Vector3& lhv, const Vector3& rhv) {
+	lhv.x += rhv.x;
+	lhv.y += rhv.y;
+	lhv.z += rhv.z;
+	return lhv;
 }
-// X軸回転行列
-KamataEngine::Matrix4x4 Math::MakeRotateXMatrix(float radian) {
-	KamataEngine::Matrix4x4 result = {};
-	result.m[0][0] = 1.0f;
-	result.m[1][1] = std::cos(radian);
-	result.m[1][2] = std::sin(radian);
-	result.m[2][1] = -std::sin(radian);
-	result.m[2][2] = std::cos(radian);
-	result.m[3][3] = 1.0f;
+
+Vector3& operator-=(Vector3& lhv, const Vector3& rhv) {
+	lhv.x -= rhv.x;
+	lhv.y -= rhv.y;
+	lhv.z -= rhv.z;
+	return lhv;
+}
+
+Vector3& operator*=(Vector3& v, float s) {
+	v.x *= s;
+	v.y *= s;
+	v.z *= s;
+	return v;
+}
+
+Vector3& operator/=(Vector3& v, float s) {
+	v.x /= s;
+	v.y /= s;
+	v.z /= s;
+	return v;
+}
+
+Matrix4x4 MakeIdentityMatrix() {
+	static const Matrix4x4 result{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
 	return result;
 }
 
-KamataEngine::Matrix4x4 Math::MakeRotateYMatrix(float radian) {
-	KamataEngine::Matrix4x4 result = {};
+Matrix4x4 MakeScaleMatrix(const Vector3& scale) {
 
-	result.m[0][0] = std::cos(radian);
-	result.m[0][2] = std::sin(radian);
-	result.m[1][1] = 1.0f;
-	result.m[2][0] = -std::sin(radian);
-	result.m[2][2] = std::cos(radian);
-	result.m[3][3] = 1.0f;
+	Matrix4x4 result{scale.x, 0.0f, 0.0f, 0.0f, 0.0f, scale.y, 0.0f, 0.0f, 0.0f, 0.0f, scale.z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
 	return result;
 }
 
-KamataEngine::Matrix4x4 Math::MakeRotateZMatrix(float radian) {
-	KamataEngine::Matrix4x4 result = {};
+Matrix4x4 MakeRotateXMatrix(float theta) {
+	float sin = std::sin(theta);
+	float cos = std::cos(theta);
 
-	result.m[0][0] = std::cos(radian);
-	result.m[0][1] = -std::sin(radian);
-	result.m[1][0] = std::sin(radian);
-	result.m[1][1] = std::cos(radian);
-	result.m[2][2] = 1.0f;
-	result.m[3][3] = 1.0f;
+	Matrix4x4 result{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, cos, sin, 0.0f, 0.0f, -sin, cos, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
 	return result;
 }
 
-KamataEngine::Matrix4x4 Math::Multiply(const KamataEngine::Matrix4x4& m1, const KamataEngine::Matrix4x4& m2) {
-	Matrix4x4 result{};
-	for (int i = 0; i < 4; ++i)
-		for (int j = 0; j < 4; ++j)
-			for (int k = 0; k < 4; ++k)
-				result.m[i][j] += m1.m[i][k] * m2.m[k][j];
+Matrix4x4 MakeRotateYMatrix(float theta) {
+	float sin = std::sin(theta);
+	float cos = std::cos(theta);
+
+	Matrix4x4 result{cos, 0.0f, -sin, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, sin, 0.0f, cos, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+
 	return result;
 }
 
-// 拡大縮小・回転・平行移動行列を使ってアフィン変換行列を作る関数
-KamataEngine::Matrix4x4 Math::MakeAffineMatrix(const KamataEngine::Vector3& scale, const KamataEngine::Vector3& rotate, const KamataEngine::Vector3& translate) {
+Matrix4x4 MakeRotateZMatrix(float theta) {
+	float sin = std::sin(theta);
+	float cos = std::cos(theta);
+
+	Matrix4x4 result{cos, sin, 0.0f, 0.0f, -sin, cos, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+
+	return result;
+}
+
+Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
+	Matrix4x4 result{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, translate.x, translate.y, translate.z, 1.0f};
+
+	return result;
+}
+
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rot, const Vector3& translate) {
+
 	// スケーリング行列の作成
-	KamataEngine::Matrix4x4 matScale = Matrix4x4MakeScaleMatrix(scale);
+	Matrix4x4 matScale = MakeScaleMatrix(scale);
 
-	KamataEngine::Matrix4x4 matRotX = MakeRotateXMatrix(rotate.x);
-	KamataEngine::Matrix4x4 matRotY = MakeRotateYMatrix(rotate.y);
-	KamataEngine::Matrix4x4 matRotZ = MakeRotateZMatrix(rotate.z);
+	Matrix4x4 matRotX = MakeRotateXMatrix(rot.x);
+	Matrix4x4 matRotY = MakeRotateYMatrix(rot.y);
+	Matrix4x4 matRotZ = MakeRotateZMatrix(rot.z);
 	// 回転行列の合成
-	KamataEngine::Matrix4x4 matRot = Multiply(Multiply(matRotZ, matRotX), matRotY);
+	Matrix4x4 matRot = matRotZ * matRotX * matRotY;
 
 	// 平行移動行列の作成
-	KamataEngine::Matrix4x4 matTrans = MakeTranslateMatrix(translate);
+	Matrix4x4 matTrans = MakeTranslateMatrix(translate);
 
 	// スケーリング、回転、平行移動の合成
-	KamataEngine::Matrix4x4 matTransform = Multiply(Multiply(matScale, matRot), matTrans);
+	Matrix4x4 matTransform = matScale * matRot * matTrans;
 
 	return matTransform;
 }
 
-Matrix4x4 Math::MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth) {
-	Matrix4x4 m = {};
+Matrix4x4& operator*=(Matrix4x4& lhm, const Matrix4x4& rhm) {
+	Matrix4x4 result{};
 
-	// 行0：X方向スケーリングと移動
-	m.m[0][0] = width / 2.0f;
-	m.m[3][0] = left + width / 2.0f;
-	m.m[1][1] = -height / 2.0f;
-	m.m[3][1] = top + height / 2.0f;
-	m.m[2][2] = maxDepth - minDepth;
-	m.m[2][3] = minDepth;
-	m.m[3][3] = 1.0f;
+	for (size_t i = 0; i < 4; i++) {
+		for (size_t j = 0; j < 4; j++) {
+			for (size_t k = 0; k < 4; k++) {
+				result.m[i][j] += lhm.m[i][k] * rhm.m[k][j];
+			}
+		}
+	}
+	lhm = result;
+	return lhm;
+}
 
-	return m;
+Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2) {
+	Matrix4x4 result = m1;
+
+	return result *= m2;
+}
+
+// ワールドトランスフォーム更新(02_03の最後)
+void WorldTransformUpdate(WorldTransform& worldTransform) {
+
+	Matrix4x4 affin_mat = MakeAffineMatrix(worldTransform.scale_, worldTransform.rotation_, worldTransform.translation_);
+
+	worldTransform.matWorld_ = affin_mat;
+
+	// 定数バッファに転送する
+	worldTransform.TransferMatrix();
+}
+
+float Lerp(float x1, float x2, float t) { return (1.0f - t) * x1 + t * x2; }
+
+float EaseInOut(float x1, float x2, float t) {
+	float easedT = -(std::cosf(std::numbers::pi_v<float> * t) - 1.0f) / 2.0f;
+
+	return Lerp(x1, x2, easedT);
+}
+
+bool IsCollision(const AABB& aabb1, const AABB& aabb2) {
+	return (aabb1.min.x <= aabb2.max.x && aabb1.max.x >= aabb2.min.x) && // x軸
+	       (aabb1.min.y <= aabb2.max.y && aabb1.max.y >= aabb2.min.y) && // y軸
+	       (aabb1.min.z <= aabb2.max.z && aabb1.max.z >= aabb2.min.z);   // z軸
+}
+
+Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
+	Vector3 result; // w=1がデカルト座標系であるので(x,y,1)のベクトルとしてmatrixとの積をとる
+	result.x = vector.x * matrix.m[0][0] + vector.y * matrix.m[1][0] + vector.z * matrix.m[2][0] + 1.0f * matrix.m[3][0];
+	result.y = vector.x * matrix.m[0][1] + vector.y * matrix.m[1][1] + vector.z * matrix.m[2][1] + 1.0f * matrix.m[3][1];
+	result.z = vector.x * matrix.m[0][2] + vector.y * matrix.m[1][2] + vector.z * matrix.m[2][2] + 1.0f * matrix.m[3][2];
+	float w = vector.x * matrix.m[0][3] + vector.y * matrix.m[1][3] + vector.z * matrix.m[2][3] + 1.0f * matrix.m[3][3];
+	assert(w != 0.0f); // ベクトルに対して基本的な操作を行う行列でwが0になることはありえない
+	// w=1がデカルト座標系であるので、w除算することで同次座標をデカルト座標に戻す
+	result.x /= w;
+	result.y /= w;
+	result.z /= w;
+	return result;
 }

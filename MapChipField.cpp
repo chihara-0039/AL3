@@ -1,48 +1,37 @@
-#include <fstream>
-#include <sstream>
+#include "MapChipField.h"
 #include <cassert>
-#include <string>
+#include <fstream>
 #include <map>
-#include "MapChipFiled.h"
-#include "KamataEngine.h"
+#include <sstream>
+#include <string>
 
-using namespace KamataEngine;
-
-
-//内部リンケージ
+// 内部リンケージ
 namespace {
 
 std::map<std::string, MapChipType> mapChipTable = {
     {"0", MapChipType::kBlank},
     {"1", MapChipType::kBlock},
 };
-
 }
 
 // マップチップデータをリセット
 void MapChipField::ResetMapChipData() {
 
-	//  マップチップデータをリセット
 	mapChipData_.data.clear();
 	mapChipData_.data.resize(kNumBlockVirtical);
-	for (std::vector<MapChipType>& mapChipDateLine : mapChipData_.data) {
-		mapChipDateLine.resize(kNumBlockHorizontal);
+
+	for (std::vector<MapChipType>& mapChipDataLine : mapChipData_.data) {
+		mapChipDataLine.resize(kNumBlockHorizontal);
 	}
 }
 
-
-// マップチップCSVを読み込む
 void MapChipField::LoadMapChipCsv(const std::string& filePath) {
-	
-	// マップチップデータをリセット
-	ResetMapChipData();
-
 	// ファイルを開く
-	std::ifstream file(filePath);
+	std::ifstream file;
 	file.open(filePath);
 	assert(file.is_open());
 
-	// マップチップCSV
+	//  マップチップCSV
 	std::stringstream mapChipCsv;
 
 	// ファイルの内容を文字列ストリームにコピー
@@ -51,11 +40,15 @@ void MapChipField::LoadMapChipCsv(const std::string& filePath) {
 	// ファイルを閉じる
 	file.close();
 
-	// CSV内容をパースして mapChipData_ に反映する処理をここに追加
+	// マップチップデータをリセット
+	ResetMapChipData();
+
+	std::string line;
+
+	// CSVからマップチップデータを読み込む
 	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
-		std::string line;
+
 		getline(mapChipCsv, line);
-		
 
 		// 1行分の文字列をストリームに変換して解析しやすくする
 		std::istringstream line_stream(line);
@@ -72,12 +65,9 @@ void MapChipField::LoadMapChipCsv(const std::string& filePath) {
 	}
 }
 
-KamataEngine::Vector3 MapChipField::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex)
-{ 
-	return KamataEngine::Vector3(kBlockWidth * xIndex, kBlockHeight * (kNumBlockVirtical - 1 - yIndex), 0); 
-}
+Vector3 MapChipField::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) { return Vector3(kBlockWidth * xIndex, kBlockHeight * (kNumBlockVirtical - 1 - yIndex), 0); }
 
-MapChipType MapChipField::GetMapChiptypeByIndex(uint32_t xIndex, uint32_t yIndex) {
+MapChipType MapChipField::GetMapChipTypeByIndex(uint32_t xIndex, uint32_t yIndex) {
 	if (xIndex < 0 || kNumBlockHorizontal - 1 < xIndex) {
 		return MapChipType::kBlank;
 	}
@@ -87,4 +77,3 @@ MapChipType MapChipField::GetMapChiptypeByIndex(uint32_t xIndex, uint32_t yIndex
 
 	return mapChipData_.data[yIndex][xIndex];
 }
-
