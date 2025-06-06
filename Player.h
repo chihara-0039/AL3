@@ -20,6 +20,12 @@ public:
 	/// 描画
 	void Draw();
 
+	// getter(02_06スライド11枚目で追加)
+	const WorldTransform& GetWorldTransform() const { return worldTransform_; }
+
+	// 02_06スライド28枚目で追加
+	const Vector3& GetVelocity() const { return velocity_; }
+
 private:
 	// ワールド変換データ
 	WorldTransform worldTransform_;
