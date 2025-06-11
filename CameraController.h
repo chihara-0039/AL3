@@ -25,11 +25,11 @@ public:
 	/// </summary>
 	void Update();
 
-	// スライド10枚目
+	
 	void SetTarget(Player* target) { target_ = target; }
-	// 11枚目
+	
 	void Reset();
-	// 02_06スライド18枚目
+	
 	void SetMovableArea(Rect area) { movableArea_ = area; }
 
 private:
@@ -42,12 +42,12 @@ private:
 	// カメラ移動範囲
 	Rect movableArea_ = {0, 100, 0, 100};
 
-	// 02_06スライド23枚目 目標座標
+	// 目標座標
 	Vector3 destination_;
-	// 02_06スライド23枚目 座標補間割合
+	// 座標補間割合
 	static inline const float kInterpolationRate = 0.1f;
-	// 02_06スライド28枚目 速度掛け率
+	// 速度掛け率
 	static inline const float kVelocityBias = 30.0f;
-	// 02_06スライド33枚目 追従対象の各方向へのカメラ移動範囲
+	//追従対象の各方向へのカメラ移動範囲
 	static inline const Rect targetMargin = {-9.0f, 9.0f, -5.0f, 5.0f};
 };

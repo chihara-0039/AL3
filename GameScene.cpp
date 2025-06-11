@@ -35,7 +35,7 @@ void GameScene::Initialize() {
 	// カメラ初期化
 	camera_.Initialize();
 
-	// 02_01から追加 プレイヤー生成
+	// プレイヤー生成
 	player_ = new Player();
 
 	// プレイヤーモデル
@@ -50,25 +50,25 @@ void GameScene::Initialize() {
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
 
-	// 02_03天球
-	//  skydome生成
+	// 天球
+	// skydome生成
 	skydome_ = new Skydome();
 	// 初期化
 	modelSkydome_ = Model::CreateFromOBJ("SkyDome", true);
 	skydome_->Initialize(modelSkydome_, &camera_);
 
-	// 02_04マップチップ
+	// マップチップ
 	mapChipField_ = new MapChipField;
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
 
-	// 02_06カメラコントローラ スライド13枚目
+	// カメラコントローラ 
 	CController_ = new CameraController(); // 生成
 	CController_->Initialize(&camera_);    // 初期化
 	CController_->SetTarget(player_);      // 追従対象セット
 	CController_->Reset();                 // リセット
 
-	// 02_06カメラコントローラ スライド18枚目
+	// カメラコントローラ
 	CameraController::Rect cameraArea = {12.0f, 100 - 12.0f, 6.0f, 6.0f};
 	CController_->SetMovableArea(cameraArea);
 }

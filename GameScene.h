@@ -37,8 +37,8 @@ private:
 	// 音声再生ハンドル
 	uint32_t voiceHandle_ = 0;
 
-	// ここから02_01からの追加
-	//  プレイヤー
+
+	// プレイヤー
 	Player* player_ = nullptr;
 	// プレイヤーモデル
 	KamataEngine::Model* player_model_ = nullptr;
@@ -52,13 +52,13 @@ private:
 	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
-	// 02_03 天球
+	// 天球
 	Skydome* skydome_ = nullptr;
 	Model* modelSkydome_ = nullptr;
 
-	// 02_04 マップチップフィールド
+	// マップチップフィールド
 	MapChipField* mapChipField_;
 
-	//02_06カメラ移動
+	// カメラ移動
 	CameraController* CController_ = nullptr;
 };
