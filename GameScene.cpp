@@ -62,6 +62,9 @@ void GameScene::Initialize() {
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
 
+	// マップチップデータのセット
+	player_->SetMapChipField(mapChipField_);
+
 	// カメラコントローラ 
 	CController_ = new CameraController(); // 生成
 	CController_->Initialize(&camera_);    // 初期化
