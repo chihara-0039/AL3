@@ -13,11 +13,12 @@ public:
 		kLeft,
 	};
 
+	
+
 	/// 初期化
 	void Initialize(Model* model, Camera* camera, const Vector3& position);
 
-	//入力処理
-	void InputMove();
+	
 
 	/// 更新
 	void Update();
@@ -36,11 +37,7 @@ public:
 
 private:
 
-	//キャラクターの当たり判定サイズ
-	//ブロックよりキャラクターを小さくして1ブロック分の隙を無理なく通れるようにする
-	static inline const float kWidth = 0.8f;
-	static inline const float kHeight = 0.8f;
-
+	
 	// ワールド変換データ
 	WorldTransform worldTransform_;
 	// モデル
@@ -71,6 +68,23 @@ private:
 	static inline const float kGravityAcceleration = 0.98f;
 	static inline const float kLimitFallSpeed = 0.5f;
 
-	//マップチップによるフィールド
+	// マップチップによるフィールド
 	MapChipField* mapChipField_ = nullptr;
+
+	// キャラクターの当たり判定サイズ
+	// ブロックよりキャラクターを小さくして1ブロック分の隙を無理なく通れるようにする
+	static inline const float kWidth = 0.8f;
+	static inline const float kHeight = 0.8f;
+
+
+	// 入力処理
+	void InputMove();
+
+	// マップとの当たり判定情報
+	struct CollisionMapInfo {
+		bool ceiling = false;
+		bool landing = false;
+		bool hitWall = false;
+		Vector3 move;
+	};
 };
