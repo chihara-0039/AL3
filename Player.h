@@ -18,8 +18,6 @@ public:
 	/// 初期化
 	void Initialize(Model* model, Camera* camera, const Vector3& position);
 
-	
-
 	/// 更新
 	void Update();
 
@@ -76,7 +74,7 @@ private:
 	static inline const float kWidth = 0.8f;
 	static inline const float kHeight = 0.8f;
 
-
+	
 	// 入力処理
 	void InputMove();
 
@@ -87,4 +85,9 @@ private:
 		bool hitWall = false;
 		Vector3 move;
 	};
+
+	//マップ衝突判定関数の「入力/出力」どちらも使えるようにするために
+	void CheckMapCollision(CollisionMapInfo& info);
+
+
 };

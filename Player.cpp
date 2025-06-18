@@ -89,12 +89,31 @@ void Player::InputMove() {
 	}
 }
 
+//02_07 スライド13枚目
+void Player::CheckMapCollision(CollisionMapInfo& info) {
+
+	CheckMapCollisionUp(info);
+	CheckMapCollisionDown(info);
+	CheckMapCollisionRight(info);
+	CheckMapCollisionLeft(info);
+}
+
 void Player ::Update() {
 
 	// 移動入力（02_07 スライド10枚目)
 	InputMove();
 
+	//衝突情報を初期化
+	CollisionMapInfo collisionMapInfo;
+	//移動量に速度の値をコピー
+	collisionMapInfo.move = velocity_;
+
+	//マップ衝突チェック
+	CheckMapCollision(collisionMapInfo);
+
 	worldTransform_.translation_ += velocity_;
+
+
 
 	bool landing = false;
 
