@@ -16,6 +16,9 @@ public:
 	/// 初期化
 	void Initialize(Model* model, Camera* camera, const Vector3& position);
 
+	//入力処理
+	void InputMove();
+
 	/// 更新
 	void Update();
 
@@ -32,6 +35,12 @@ public:
 	const Vector3& GetVelocity() const { return velocity_; }
 
 private:
+
+	//キャラクターの当たり判定サイズ
+	//ブロックよりキャラクターを小さくして1ブロック分の隙を無理なく通れるようにする
+	static inline const float kWidth = 0.8f;
+	static inline const float kHeight = 0.8f;
+
 	// ワールド変換データ
 	WorldTransform worldTransform_;
 	// モデル

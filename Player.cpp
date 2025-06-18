@@ -19,10 +19,13 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	camera_ = camera;
 }
 
-void Player ::Update() {
+// 移動入力（02_07 スライド10枚目）
+void Player::InputMove() {
 
 	// 移動入力
 	if (onGround_) {
+
+		// 左右移動操作
 		if (Input::GetInstance()->PushKey(DIK_RIGHT) || Input::GetInstance()->PushKey(DIK_LEFT)) {
 
 			// 左右加速
@@ -35,7 +38,7 @@ void Player ::Update() {
 					velocity_.x *= (1.0f - kAttenuation);
 				}
 
-				acceleration.x += kAcceleration;
+				acceleration.x += kAcceleration / 60.0f;
 
 				if (lrDirection_ != LRDirection::kRight) {
 					lrDirection_ = LRDirection::kRight;
@@ -49,7 +52,7 @@ void Player ::Update() {
 					velocity_.x *= (1.0f - kAttenuation);
 				}
 
-				acceleration.x -= kAcceleration;
+				acceleration.x -= kAcceleration / 60.0f;
 
 				if (lrDirection_ != LRDirection::kLeft) {
 					lrDirection_ = LRDirection::kLeft;
@@ -68,18 +71,28 @@ void Player ::Update() {
 			velocity_.x *= (1.0f - kAttenuation);
 		}
 
+		// ほぼ０の場合に０にする
+		if (std::abs(velocity_.x) <= 0.0001f) {
+			velocity_.x = 0.0f;
+		}
+
 		if (Input::GetInstance()->PushKey(DIK_UP)) {
 			// ジャンプ初速
 			velocity_ += Vector3(0, kJumpAcceleration / 60.0f, 0);
 		}
-	}
 	// 空中
-	else {
+	} else {
 		// 落下速度
 		velocity_ += Vector3(0, -kGravityAcceleration / 60.0f, 0);
 		// 落下速度制限
 		velocity_.y = std::max(velocity_.y, -kLimitFallSpeed);
 	}
+}
+
+void Player ::Update() {
+
+	// 移動入力（02_07 スライド10枚目)
+	InputMove();
 
 	worldTransform_.translation_ += velocity_;
 
