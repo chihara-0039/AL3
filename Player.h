@@ -13,7 +13,8 @@ public:
 		kLeft,
 	};
 
-	
+	// 角 02_07スライド16枚目
+	enum Corner { kRightBottom, kLeftBottom, kRightTop, kLeftTop, kNumCorner };
 
 	/// 初期化
 	void Initialize(Model* model, Camera* camera, const Vector3& position);
@@ -24,18 +25,16 @@ public:
 	/// 描画
 	void Draw();
 
-	//外部からポインタをセットするためのsetter
-	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
-
-	// getter
+	// getter(02_06スライド11枚目で追加)
 	const WorldTransform& GetWorldTransform() const { return worldTransform_; }
 
-	
+	// 02_06スライド28枚目で追加
 	const Vector3& GetVelocity() const { return velocity_; }
 
-private:
+	// 02_07 スライド4枚目
+	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 
-	
+private:
 	// ワールド変換データ
 	WorldTransform worldTransform_;
 	// モデル
@@ -43,51 +42,53 @@ private:
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0u;
 	Camera* camera_ = nullptr;
-	// 移動量
+	// 02_05 移動量
 	Vector3 velocity_ = {};
-	// フレームごとの加速度
-	static inline const float kAcceleration = 0.01f;
-	// 非入力時の摩擦係数
+	// 02_05  フレームごとの加速度
+	static inline const float kAcceleration = 0.1f;
+	// 02_05 非入力時の摩擦係数
 	static inline const float kAttenuation = 0.05f;
-	// 最高速度
+	// 02_05 最高速度
 	static inline const float kLimitRunSpeed = 0.3f;
-	// 顔の向き
+	// 02_05 顔の向き
 	LRDirection lrDirection_ = LRDirection::kRight;
-	// 旋回開始時の角度
+	// 02_05 旋回開始時の角度
 	float turnFirstRotationY_ = 0.0f;
-	// 旋回タイマー
+	// 02_05 旋回タイマー
 	float turnTimer_ = 0.0f;
-	// 旋回時間 <秒>
+	// 02_05 旋回時間 <秒>
 	static inline const float kTimeTurn = 0.3f;
-	// 着地フラグ
+	// 02_05 着地フラグ
 	bool onGround_ = true;
-	// ジャンプ定数もろもろ
+	// 02_05 ジャンプ定数もろもろ
 	static inline const float kJumpAcceleration = 20.0f;
 	static inline const float kGravityAcceleration = 0.98f;
 	static inline const float kLimitFallSpeed = 0.5f;
 
-	// マップチップによるフィールド
+	// 02_07 マップチップによるフィールド
 	MapChipField* mapChipField_ = nullptr;
-
-	// キャラクターの当たり判定サイズ
-	// ブロックよりキャラクターを小さくして1ブロック分の隙を無理なく通れるようにする
+	// 02_07 キャラクターの当たり判定サイズ
 	static inline const float kWidth = 0.8f;
 	static inline const float kHeight = 0.8f;
+	// 02_07スライド34枚目
+	static inline const float kBlank = 0.04f;
 
-	
-	// 入力処理
+	// 02_07スライド10枚目 移動入力
 	void InputMove();
-
-	// マップとの当たり判定情報
+	// 02_07 スライド12枚目
 	struct CollisionMapInfo {
 		bool ceiling = false;
 		bool landing = false;
 		bool hitWall = false;
 		Vector3 move;
 	};
-
-	//マップ衝突判定関数の「入力/出力」どちらも使えるようにするために
+	// 02_07 スライド13枚目
 	void CheckMapCollision(CollisionMapInfo& info);
-
-
+	// 02_07 スライド14枚目
+	void CheckMapCollisionUp(CollisionMapInfo& info);
+	void CheckMapCollisionDown(CollisionMapInfo& info);
+	void CheckMapCollisionRight(CollisionMapInfo& info);
+	void CheckMapCollisionLeft(CollisionMapInfo& info);
+	// 02_07 スライド17枚目
+	Vector3 CornerPosition(const Vector3& center, Corner corner);
 };
