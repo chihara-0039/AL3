@@ -19,6 +19,9 @@ GameScene::~GameScene() {
 	delete debugCamera_;
 	delete modelSkydome_;
 	delete mapChipField_;
+
+	// 02_09 10枚目 敵クラス削除
+	delete enemy_;
 }
 
 void GameScene::Initialize() {
@@ -35,45 +38,54 @@ void GameScene::Initialize() {
 	// カメラ初期化
 	camera_.Initialize();
 
-	// プレイヤー生成
-	player_ = new Player();
-
-	// プレイヤーモデル
-	player_model_ = Model::CreateFromOBJ("player");
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(2, 18);
-
-	player_->Initialize(player_model_, &camera_, playerPosition);
-
 	// ブロックモデル
 	block_model_ = Model::CreateFromOBJ("block");
 
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(WinApp::kWindowWidth, WinApp::kWindowHeight);
 
-	// 天球
-	// skydome生成
+	// 02_03 skydome生成
 	skydome_ = new Skydome();
 	// 初期化
 	modelSkydome_ = Model::CreateFromOBJ("SkyDome", true);
 	skydome_->Initialize(modelSkydome_, &camera_);
 
-	// マップチップ
+	// 02_04マップチップ
 	mapChipField_ = new MapChipField;
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
 
-	// マップチップデータのセット
+	// 02_07 マップチップクラスを作ってからプレイヤークラスを作る
+	// という順番に入れ替える
+	// 02_01から追加 プレイヤー生成
+	player_ = new Player();
+
+	// プレイヤーモデル
+	player_model_ = Model::CreateFromOBJ("player");
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(2, 18);
+
+	// 02_07 スライド5枚目
 	player_->SetMapChipField(mapChipField_);
 
-	// カメラコントローラ 
+	player_->Initialize(player_model_, &camera_, playerPosition);
+
+	// 02_06カメラコントローラ スライド13枚目
 	CController_ = new CameraController(); // 生成
 	CController_->Initialize(&camera_);    // 初期化
 	CController_->SetTarget(player_);      // 追従対象セット
 	CController_->Reset();                 // リセット
 
-	// カメラコントローラ
+	// 02_06カメラコントローラ スライド18枚目
 	CameraController::Rect cameraArea = {12.0f, 100 - 12.0f, 6.0f, 6.0f};
 	CController_->SetMovableArea(cameraArea);
+
+	// 02_09 10枚目 敵クラス
+	enemy_ = new Enemy();
+	// 02_09 10枚目 敵モデル
+	enemy_model_ = Model::CreateFromOBJ("enemy");
+	// 02_09 10枚目 敵位置決めて敵クラス初期化
+	Vector3 enemyPosition = mapChipField_->GetMapChipPositionByIndex(14, 18);
+	enemy_->Initialize(enemy_model_, &camera_, enemyPosition);
 }
 
 void GameScene::GenerateBlocks() {
@@ -107,6 +119,9 @@ void GameScene::Update() {
 	player_->Update();
 	skydome_->Update();
 	CController_->Update();
+
+	// 02_09 12枚目 敵更新
+	enemy_->Update();
 
 #ifdef _DEBUG
 	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
@@ -166,6 +181,9 @@ void GameScene::Draw() {
 			block_model_->Draw(*worldTransformBlock, camera_);
 		}
 	}
+
+	// 02_09 12枚目 敵更新
+	enemy_->Draw();
 
 	Model::PostDraw();
 

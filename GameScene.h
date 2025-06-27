@@ -1,10 +1,11 @@
 #pragma once
-#include <vector>
+#include "CameraController.h"
+#include "Enemy.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include "Player.h"
 #include "skydome.h"
-#include "CameraController.h"
+#include <vector>
 
 // ゲームシーンクラス
 class GameScene {
@@ -37,8 +38,8 @@ private:
 	// 音声再生ハンドル
 	uint32_t voiceHandle_ = 0;
 
-
-	// プレイヤー
+	// ここから02_01からの追加
+	//  プレイヤー
 	Player* player_ = nullptr;
 	// プレイヤーモデル
 	KamataEngine::Model* player_model_ = nullptr;
@@ -52,13 +53,18 @@ private:
 	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
-	// 天球
+	// 02_03 天球
 	Skydome* skydome_ = nullptr;
 	Model* modelSkydome_ = nullptr;
 
-	// マップチップフィールド
+	// 02_04 マップチップフィールド
 	MapChipField* mapChipField_;
 
-	// カメラ移動
+	// 02_06カメラ移動
 	CameraController* CController_ = nullptr;
+
+	// 02_09 10枚目 エネミークラス
+	Enemy* enemy_ = nullptr;
+	// 02_09 10枚目 エネミーモデル
+	KamataEngine::Model* enemy_model_ = nullptr;
 };
