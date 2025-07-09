@@ -1,5 +1,6 @@
 #pragma once
 #include "CameraController.h"
+#include "DeathParticles.h"
 #include "Enemy.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
@@ -68,8 +69,16 @@ private:
 
 	// 02_09 10枚目 エネミークラス
 	// Enemy* enemy_ = nullptr;//02_10で削除
+
 	// 02_09 10枚目 エネミーモデル
 	KamataEngine::Model* enemy_model_ = nullptr;
+
 	// 02_10 4枚目
 	std::list<Enemy*> enemies_;
+
+	// 02_11 15枚目
+	DeathParticles* deathParticles_ = nullptr;
+
+	// 02_11 16枚目
+	Model* deathParticle_model_ = nullptr;
 };
