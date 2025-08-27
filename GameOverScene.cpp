@@ -6,7 +6,8 @@ GameOverScene::~GameOverScene() {
 	delete modelPlayer_;
 	delete modelGameOver_;
 	delete fade_; // ← 追加：後始末
-	delete blackOverlay_;
+	delete skydome_;
+	delete modelSkydome_;
 }
 
 void GameOverScene::Initialize() {
@@ -30,19 +31,15 @@ void GameOverScene::Initialize() {
 	worldTransformPlayer_.translation_.x = -2.0f;
 	worldTransformPlayer_.translation_.y = -10.0f;
 
+	modelSkydome_ = Model::CreateFromOBJ("SkyDome", true);
+	skydome_ = new Skydome();
+	skydome_->Initialize(modelSkydome_, &camera_);
+
 	// --- 追加：登場時は黒→フェードイン ---
 	fade_ = new Fade();
 	fade_->Initialize();
 	// GameScene 側で真っ黒までフェードアウト済み → ここで黒から1.0秒かけて明るく
 	fade_->Start(Fade::Status::FadeIn, 1.0f);
-
-	 // 追加：画面全体を覆う真っ黒スプライト
-	overlayTex_ = TextureManager::Load("white1x1.png");
-	blackOverlay_ = Sprite::Create(overlayTex_, {0.0f, 0.0f});
-	if (blackOverlay_) {
-		blackOverlay_->SetSize({(float)WinApp::kWindowWidth, (float)WinApp::kWindowHeight});
-		blackOverlay_->SetColor({0.0f, 0.0f, 0.0f, 1.0f}); // 完全不透明の黒
-	}
 }
 
 void GameOverScene::Update() {
@@ -59,6 +56,11 @@ void GameOverScene::Update() {
 	if (!requestExit_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			requestExit_ = true;
 			fade_->Start(Fade::Status::FadeOut, 0.8f); // 0.8秒で暗転→抜ける
+	}
+
+	// ★天球の更新
+	if (skydome_) {
+		skydome_->Update();
 	}
 
 	// カメラ/行列更新
@@ -80,9 +82,10 @@ void GameOverScene::Draw() {
 	DirectXCommon* dxCommon_ = DirectXCommon::GetInstance();
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
-
 	Model::PreDraw(commandList);
-
+	if (skydome_) {
+		skydome_->Draw();
+	}
 	modelGameOver_->Draw(worldTransformTitle_, camera_);
 	modelPlayer_->Draw(worldTransformPlayer_, camera_);
 

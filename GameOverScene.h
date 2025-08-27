@@ -1,6 +1,7 @@
 #pragma once
 #include "KamataEngine.h"
 #include "Fade.h"
+#include "skydome.h" 
 
 using namespace KamataEngine;
 
@@ -29,6 +30,9 @@ private:
 	Model* modelPlayer_ = nullptr;
 	Model* modelGameOver_ = nullptr;
 
+	Skydome* skydome_ = nullptr;
+	Model* modelSkydome_ = nullptr;
+
 	float counter_ = 0.0f;
 	// 02_12 26枚目
 	bool finished_ = false;
@@ -36,8 +40,4 @@ private:
 	// フェード制御
 	Fade* fade_ = nullptr;
 	bool requestExit_ = false;	//退出（タイトルへ戻る）要求フラグ
-
-	//黒背景用スプライト
-	uint32_t overlayTex_ = 0;
-	Sprite* blackOverlay_ = nullptr;
 };
