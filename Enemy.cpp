@@ -1,81 +1,117 @@
 #include "Enemy.h"
-#include "Math.h"
+#include "GameScene.h"
+#include "MapChipField.h"
 #include <cassert>
+#include <cmath>
 #include <numbers>
 
-// 02_09 スライド5枚目
+// 初期化
 void Enemy::Initialize(Model* model, Camera* camera, const Vector3& position) {
-
-	// NULLチェック
 	assert(model);
-
-	// 02_09 7枚目
 	model_ = model;
-	// 02_09 7枚目
 	camera_ = camera;
-	// 02_09 7枚目
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
-	// 02_09 7枚目 角度調整
-	worldTransform_.rotation_.y = std::numbers::pi_v<float> * 3.0f / 2.0f;
-
-	// 02_09 16枚目
+	worldTransform_.rotation_.y = std::numbers::pi_v<float> * 3.0f / 2.0f; // 左向き
 	velocity_ = {-kWalkSpeed, 0, 0};
-	// 02_09 20枚目
 	walkTimer = 0.0f;
 }
 
-// 02_09 スライド5枚目
+// 壁衝突チェック
+void Enemy::CheckMapCollision() {
+	if (!mapChipField_)
+		return; 
+
+	// 右側
+	MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexSetByPosition({worldTransform_.translation_.x + kWidth / 2.0f, worldTransform_.translation_.y, worldTransform_.translation_.z});
+	if (mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
+		velocity_.x = -std::abs(velocity_.x);
+		worldTransform_.rotation_.y = std::numbers::pi_v<float> * 3.0f / 2.0f; // 左向き
+		direction_ = Direction::kLeft;
+		return;
+	}
+
+	// 左側
+	indexSet = mapChipField_->GetMapChipIndexSetByPosition({worldTransform_.translation_.x - kWidth / 2.0f, worldTransform_.translation_.y, worldTransform_.translation_.z});
+	if (mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
+		velocity_.x = std::abs(velocity_.x);
+		worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f; // 右向き
+		direction_ = Direction::kRight;
+		return;
+	}
+}
+
+// 更新
 void Enemy::Update() {
+	// 振る舞い変更リクエスト
+	if (behaviorRequest_ != Behavior::kUnknown) {
+		behavior_ = behaviorRequest_;
+		switch (behavior_) {
+		case Behavior::kDefeated:
+			counter_ = 0;
+			break;
+		default:
+			break;
+		}
+		behaviorRequest_ = Behavior::kUnknown;
+	}
 
-	// 02_09 16枚目 移動
-	worldTransform_.translation_ += velocity_;
+	switch (behavior_) {
+	case Behavior::kWalk: {
+		// 壁判定して方向反転
+		CheckMapCollision();
 
-	// 02_09 20枚目
-	walkTimer += 1.0f / 60.0f;
+		// 移動
+		worldTransform_.translation_ += velocity_;
 
-	// 02_09 23枚目 回転アニメーション
-	worldTransform_.rotation_.x = std::sin(std::numbers::pi_v<float> * 2.0f * walkTimer / kWalkMotionTime);
+		// 歩行アニメーション
+		walkTimer += 1.0f / 60.0f;
+		worldTransform_.rotation_.x = std::sin(std::numbers::pi_v<float> * 2.0f * walkTimer / kWalkMotionTime);
 
-	// 02_09 スライド8枚目 ワールド行列更新
-	WorldTransformUpdate(worldTransform_);
+		WorldTransformUpdate(worldTransform_);
+		break;
+	}
+
+	case Behavior::kDefeated: {
+		counter_ += 1.0f / 60.0f;
+		worldTransform_.rotation_.y += 0.3f;
+		worldTransform_.rotation_.x = EaseOut(ToRadians(kDefeatedMotionAngleStart), ToRadians(kDefeatedMotionAngleEnd), counter_ / kDefeatedTime);
+		WorldTransformUpdate(worldTransform_);
+
+		if (counter_ >= kDefeatedTime) {
+			isDead_ = true;
+		}
+		break;
+	}
+	}
 }
 
-// 02_09 スライド5枚目
-void Enemy::Draw() {
+// 描画
+void Enemy::Draw() { model_->Draw(worldTransform_, *camera_); }
 
-	// 02_09 スライド9枚目  モデル描画
-	model_->Draw(worldTransform_, *camera_);
-}
-
-// 02_10 スライド14枚目
+// AABB取得
 AABB Enemy::GetAABB() {
-
-	Vector3 worldPos = GetWorldPosition();
-
-	AABB aabb;
-
-	aabb.min = {worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f};
-	aabb.max = {worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f};
-
-	return aabb;
+	Vector3 pos = GetWorldPosition();
+	return {
+	    {pos.x - kWidth / 2.0f, pos.y - kHeight / 2.0f, pos.z - kWidth / 2.0f},
+        {pos.x + kWidth / 2.0f, pos.y + kHeight / 2.0f, pos.z + kWidth / 2.0f}
+    };
 }
 
-// 02_10 スライド14枚目
-Vector3 Enemy::GetWorldPosition() {
+// ワールド座標取得
+Vector3 Enemy::GetWorldPosition() { return {worldTransform_.matWorld_.m[3][0], worldTransform_.matWorld_.m[3][1], worldTransform_.matWorld_.m[3][2]}; }
 
-	Vector3 worldPos;
-
-	// ワールド行列の平行移動成分を取得（ワールド座標）
-	worldPos.x = worldTransform_.matWorld_.m[3][0];
-	worldPos.y = worldTransform_.matWorld_.m[3][1];
-	worldPos.z = worldTransform_.matWorld_.m[3][2];
-
-	return worldPos;
-}
-
-// 02_10 スライド20枚目
+// プレイヤーとの衝突
 void Enemy::OnCollision(const Player* player) {
-	(void)player;
-	//
+	if (behavior_ == Behavior::kDefeated)
+		return;
+	if (player->IsAttack()) {
+		if (gameScene_) {
+			Vector3 pos = player->GetWorldPosition();
+			Vector3 effectPos = (GetWorldPosition() + pos) * 0.5f;
+			gameScene_->CreateEffect(effectPos);
+		}
+		behaviorRequest_ = Behavior::kDefeated;
+		isCollisionDisabled_ = true;
+	}
 }

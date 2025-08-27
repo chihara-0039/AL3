@@ -1,4 +1,6 @@
 #include "skydome.h"
+#include <cassert>
+
 
 /// <summary>
 /// 初期化

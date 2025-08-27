@@ -1,28 +1,27 @@
 #pragma once
 #include "Fade.h"
 #include "KamataEngine.h"
+#include "skydome.h"
 
-    using namespace KamataEngine;
+using namespace KamataEngine;
 
-// 02_12 19枚目 タイトルシーン
+// タイトルシーン
 class TitleScene {
 public:
-	// 02_12 27枚目 シーンのフェーズ
+	// シーンのフェーズ
 	enum class Phase {
-		kFadeIn,  // フェードイン
-		kMain,    // メイン部
-		kFadeOut, // フェードアウト
+		kFadeIn,   // フェードイン
+		kMain,     // メイン部（待機）
+		kStartRun, // ★スタート演出（走り抜け）
+		kFadeOut,  // フェードアウト
 	};
 
 	~TitleScene();
 
 	void Initialize();
-
 	void Update();
-
 	void Draw();
 
-	// 02_12 26枚目
 	bool IsFinished() const { return finished_; }
 
 private:
@@ -36,13 +35,22 @@ private:
 	Model* modelPlayer_ = nullptr;
 	Model* modelTitle_ = nullptr;
 
+	Skydome* skydome_ = nullptr;
+	Model* modelSkydome_ = nullptr;
+
 	float counter_ = 0.0f;
-	// 02_12 26枚目
 	bool finished_ = false;
 
-	// 02_13 12枚目
 	Fade* fade_ = nullptr;
-
-	// 02_13 27枚目 現在のフェーズ
 	Phase phase_ = Phase::kFadeIn;
+
+	// --- 走り抜け演出用 ---
+	float runTime_ = 0.0f;                         // 経過時間
+	static inline const float kRunDuration = 1.2f; // 走り抜け時間（秒）
+	float basePlayerY_ = 0.0f;                     // プレイヤーの基準Y
+	float runXStart_ = -40.0f;                     // 左端（画面外くらい）
+	float runXEnd_ = 40.0f;                        // 右端（画面外くらい）
+
+	// イージング
+	static inline float EaseOutCubic(float t) { return 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t); }
 };

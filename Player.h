@@ -1,5 +1,6 @@
 #pragma once
 #include "KamataEngine.h"
+#include "Enemy.h"
 #include "Math.h"
 
 using namespace KamataEngine;
@@ -20,8 +21,32 @@ public:
 	// 角 02_07スライド16枚目
 	enum Corner { kRightBottom, kLeftBottom, kRightTop, kLeftTop, kNumCorner };
 
+	// 02_14 11枚目 振るまい
+	enum class Behavior {
+		kUnknown = -1,
+		kRoot,   // 通常状態
+		kAttack, // 攻撃中
+	};
+
+	// 02_14 24枚目 攻撃フェーズ
+	enum class AttackPhase {
+		kUnknown = -1, // 無効な状態
+
+		kAnticipation, // 予備動作
+		kAction,       // 前進動作
+		kRecovery,     // 余韻動作
+	};
+
+	// 02_07 スライド12枚目
+	struct CollisionMapInfo {
+		bool ceiling = false;
+		bool landing = false;
+		bool hitWall = false;
+		Vector3 move;
+	};
+
 	/// 初期化
-	void Initialize(Model* model, Camera* camera, const Vector3& position);
+	void Initialize(Model* model, Model* modelAttack, Camera* camera, const Vector3& position);
 
 	/// 更新
 	void Update();
@@ -39,7 +64,7 @@ public:
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 
 	// 02_10 10枚目 ワールド座標を取得
-	Vector3 GetWorldPosition();
+	Vector3 GetWorldPosition() const;
 
 	// 02_10 13枚目
 	AABB GetAABB();
@@ -49,6 +74,46 @@ public:
 
 	// 02_12 11枚目 デスフラグ
 	bool IsDead() const { return isDead_; }
+
+	// 02_14 6枚目 通常行動更新
+	void BehaviorRootUpdate();
+
+	// 02_14 8枚目 攻撃行動更新
+	void BehaviorAttackUpdate();
+
+	// 02_14 16枚目 通常行動初期化
+	void BehaviorRootInitialize();
+
+	// 02_14 16枚目 攻撃行動初期化
+	void BehaviorAttackInitialize();
+
+	// 02_15 14枚目
+	bool IsAttack() const { return behavior_ == Behavior::kAttack && attackPhase_ == AttackPhase::kAction; }
+
+	// 02_15
+	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
+
+	// 02_07 スライド13枚目
+	void CheckMapCollision(CollisionMapInfo& info);
+	// 02_07 スライド14枚目
+	void CheckMapCollisionUp(CollisionMapInfo& info);
+	void CheckMapCollisionDown(CollisionMapInfo& info);
+	void CheckMapCollisionRight(CollisionMapInfo& info);
+	void CheckMapCollisionLeft(CollisionMapInfo& info);
+
+	
+	// -----------------------------------
+	// HP用
+	int GetHP() const { return hp_; }
+	int GetMaxHP() const { return maxHP_; }
+	bool IsInvincible() const { return invincibleTimer_ > 0.0f; }
+
+	// ダメージ/回復API
+	void TakeDamage(int amount = 1);
+	void Heal(int amount);
+
+
+	//bool IsDead() const { return hp_ <= 0; }
 
 private:
 	// ワールド変換データ
@@ -91,20 +156,8 @@ private:
 
 	// 02_07スライド10枚目 移動入力
 	void InputMove();
-	// 02_07 スライド12枚目
-	struct CollisionMapInfo {
-		bool ceiling = false;
-		bool landing = false;
-		bool hitWall = false;
-		Vector3 move;
-	};
-	// 02_07 スライド13枚目
-	void CheckMapCollision(CollisionMapInfo& info);
-	// 02_07 スライド14枚目
-	void CheckMapCollisionUp(CollisionMapInfo& info);
-	void CheckMapCollisionDown(CollisionMapInfo& info);
-	void CheckMapCollisionRight(CollisionMapInfo& info);
-	void CheckMapCollisionLeft(CollisionMapInfo& info);
+	
+	
 	// 02_07 スライド17枚目
 	Vector3 CornerPosition(const Vector3& center, Corner corner);
 
@@ -122,4 +175,39 @@ private:
 	static inline const float kAttenuationWall = 0.2f;
 	// 02_12 11枚目 デスフラグ
 	bool isDead_ = false;
+
+	// 02_14 11枚目 振るまい
+	Behavior behavior_ = Behavior::kRoot;
+
+	// 02_14 14枚目 次の振るまいリクエスト
+	Behavior behaviorRequest_ = Behavior::kUnknown;
+
+	// 02_14 19枚目 攻撃ギミックの経過時間カウンター
+	uint32_t attackParameter_ = 0;
+
+	// 02_14 24枚目 攻撃フェーズ
+	AttackPhase attackPhase_ = AttackPhase::kUnknown;
+
+	// 02_14 26枚目 予備動作の時間
+	static inline const uint32_t kAnticipationTime = 8;
+	// 02_14 26枚目 前進動作の時間
+	static inline const uint32_t kActionTime = 5;
+	// 02_14 26枚目 余韻動作の時間
+	static inline const uint32_t kRecoveryTime = 12;
+	// 02_14 34枚目 攻撃エフェクト
+	Model* modelAttack_ = nullptr;
+	WorldTransform worldTransformAttack_;
+
+	// 02_15 20枚目
+	bool isCollisionDisabled_ = false; // 衝突無効化
+
+	// PlayerHP
+	// ----------------------------------------
+	int maxHP_ = 3;                                   // 最大HP（お好みで）
+	int hp_ = maxHP_;                                 // 現在HP
+	float invincibleTimer_ = 0.0f;                    // 無敵タイマー[秒]
+	static inline const float kInvincibleTime = 1.0f; // 被弾後の無敵秒数
+
+
+
 };

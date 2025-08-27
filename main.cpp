@@ -1,30 +1,30 @@
+#include "GameClearScene.h" // ★追加
+#include "GameOverScene.h"
 #include "GameScene.h"
 #include "KamataEngine.h"
-#include "TitleScene.h" // 02_12 21枚目
+#include "TitleScene.h"
 #include <Windows.h>
 
 using namespace KamataEngine;
 
-// 02_12 24枚目
 TitleScene* titleScene = nullptr;
 GameScene* gameScene = nullptr;
+GameOverScene* gameOverScene = nullptr;
+GameClearScene* gameClearScene = nullptr; // ★追加
 
-// 02_12 25枚目(Scene sceneまで)
 enum class Scene {
 	kUnknown = 0,
 	kTitle,
 	kGame,
+	kGameOver,
+	kGameClear, // ★追加
 };
-// 現在シーン（型）
 Scene scene = Scene::kUnknown;
 
-// 02_12 29枚目
 void ChangeScene() {
-
 	switch (scene) {
 	case Scene::kTitle:
 		if (titleScene->IsFinished()) {
-			// シーン変更
 			scene = Scene::kGame;
 			delete titleScene;
 			titleScene = nullptr;
@@ -32,23 +32,62 @@ void ChangeScene() {
 			gameScene->Initialize();
 		}
 		break;
+
 	case Scene::kGame:
-		// 02_12 30枚目
 		if (gameScene->IsFinished()) {
-			// シーン変更
+			switch (gameScene->GetResult()) {
+			case GameScene::Result::kGameOver:
+				scene = Scene::kGameOver;
+				delete gameScene;
+				gameScene = nullptr;
+				gameOverScene = new GameOverScene;
+				gameOverScene->Initialize();
+				break;
+			case GameScene::Result::kClear:
+				scene = Scene::kGameClear; // ★クリアへ
+				delete gameScene;
+				gameScene = nullptr;
+				gameClearScene = new GameClearScene;
+				gameClearScene->Initialize();
+				break;
+			case GameScene::Result::kReturnToTitle:
+			default:
+				scene = Scene::kTitle;
+				delete gameScene;
+				gameScene = nullptr;
+				titleScene = new TitleScene;
+				titleScene->Initialize();
+				break;
+			}
+		}
+		break;
+
+	case Scene::kGameOver:
+		if (gameOverScene->IsFinished()) {
 			scene = Scene::kTitle;
-			delete gameScene;
-			gameScene = nullptr;
+			delete gameOverScene;
+			gameOverScene = nullptr;
 			titleScene = new TitleScene;
 			titleScene->Initialize();
 		}
 		break;
+
+	case Scene::kGameClear: // ★追加
+		if (gameClearScene->IsFinished()) {
+			scene = Scene::kTitle;
+			delete gameClearScene;
+			gameClearScene = nullptr;
+			titleScene = new TitleScene;
+			titleScene->Initialize();
+		}
+		break;
+
+	default:
+		break;
 	}
 }
 
-// 02_12 31枚目
 void UpdateScene() {
-
 	switch (scene) {
 	case Scene::kTitle:
 		titleScene->Update();
@@ -56,10 +95,17 @@ void UpdateScene() {
 	case Scene::kGame:
 		gameScene->Update();
 		break;
+	case Scene::kGameOver:
+		gameOverScene->Update();
+		break;
+	case Scene::kGameClear:
+		gameClearScene->Update();
+		break; // ★追加
+	default:
+		break;
 	}
 }
 
-// 02_12 32枚目
 void DrawScene() {
 	switch (scene) {
 	case Scene::kTitle:
@@ -68,77 +114,61 @@ void DrawScene() {
 	case Scene::kGame:
 		gameScene->Draw();
 		break;
+	case Scene::kGameOver:
+		gameOverScene->Draw();
+		break;
+	case Scene::kGameClear:
+		gameClearScene->Draw();
+		break; // ★追加
+	default:
+		break;
 	}
 }
 
-// Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-
-	// エンジンの初期化
 	KamataEngine::Initialize(L"LE2C_21_チハラ_シゴウ");
 
-	// DirectXCommonインスタンスの取得
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
+	ImGuiManager* imgui = ImGuiManager::GetInstance();
 
-	// ImGuiManagerインスタンスの取得
-	ImGuiManager* imguiManager = ImGuiManager::GetInstance();
-
-	// 02_12 21枚目 ↓3行
-	//	TitleScene *titleScene = nullptr; // 02_12 24枚目でグローバルに引っ越し
-	scene = Scene::kTitle; // 02_12 28枚目
+	scene = Scene::kTitle;
 	titleScene = new TitleScene;
 	titleScene->Initialize();
 
-	// メインループ
 	while (true) {
-		// エンジンの更新
 		if (KamataEngine::Update()) {
 			break;
 		}
 
-		// ImGui受付開始
-		imguiManager->Begin();
+		imgui->Begin();
 
-		// 02_12 21枚目で変更
-		//		titleScene->Update(); //02_12 33枚目で削除
+		ChangeScene();
+		UpdateScene();
 
-		// シーン切り替え
-		ChangeScene(); // 02_12 33枚目で追加
-		// シーン更新
-		UpdateScene(); // 02_12 33枚目で追加
+		imgui->End();
 
-		// ImGui受付終了
-		imguiManager->End();
-
-		// 描画開始
 		dxCommon->PreDraw();
 
-		// ゲームシーンの描画
-		//		titleScene->Draw(); // 02_12 33枚目で削除
+		DrawScene();
 
-		// シーンの描画
-		DrawScene(); // 02_12 33枚目で追加
-
-		// 軸表示の描画
 		AxisIndicator::GetInstance()->Draw();
-
-		// プリミティブ描画のリセット
 		PrimitiveDrawer::GetInstance()->Reset();
 
-		// ImGui描画
-		imguiManager->Draw();
-		imguiManager->Draw();
+		// imgui->Draw();
 
-		// 描画終了
 		dxCommon->PostDraw();
 	}
 
-	// 02_12 35枚目 各種解放
+	// 後始末
 	delete titleScene;
+	titleScene = nullptr;
 	delete gameScene;
+	gameScene = nullptr;
+	delete gameOverScene;
+	gameOverScene = nullptr;
+	delete gameClearScene;
+	gameClearScene = nullptr; // ★追加
 
-	// エンジンの終了処理
 	KamataEngine::Finalize();
-
 	return 0;
 }
