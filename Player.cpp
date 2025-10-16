@@ -2,11 +2,9 @@
 #include <Windows.h>
 
 #include "Player.h"
+#include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <algorithm>
-
-//static float Clamp(float v, float a, float b) { return std::min(std::max(v, a), b); }
 
 bool Player::KeyDown(int vk) { return (GetAsyncKeyState(vk) & 0x8000) != 0; }
 
@@ -22,17 +20,20 @@ void Player::Initialize(const Vec3& start) {
 	vel_ = {0, 0, 0};
 	onGround_ = true;
 	jumpCount_ = 0;
+
 	dodging_ = false;
 	dodgeTimer_ = 0.0f;
 	dodgeCooldownTimer_ = 0.0f;
+
 	reloading_ = false;
 	reloadTimer_ = 0.0f;
 	ammo_ = maxAmmo;
+
 	std::memset(keyLatch_, 0, sizeof(keyLatch_));
 }
 
 void Player::Update(float dt, const Vec3& camF, const Vec3& camR) {
-	// 入力処理
+	// 入力処理（順序はReload→Dodge→Move→Jump/Glide）
 	HandleReload(dt);
 	if (!reloading_) {
 		HandleDodge(dt);
@@ -43,7 +44,7 @@ void Player::Update(float dt, const Vec3& camF, const Vec3& camR) {
 	// 位置更新
 	pos_ += vel_ * dt;
 
-	// 超簡易接地判定（y=0が地面）
+	// 超簡易接地判定（y=0面）
 	if (pos_.y <= 0.0f) {
 		pos_.y = 0.0f;
 		vel_.y = 0.0f;
@@ -53,24 +54,22 @@ void Player::Update(float dt, const Vec3& camF, const Vec3& camR) {
 		onGround_ = false;
 	}
 
-	// クールダウン
+	// 回避クールダウン
 	if (dodgeCooldownTimer_ > 0.0f)
 		dodgeCooldownTimer_ = std::max(0.0f, dodgeCooldownTimer_ - dt);
 }
 
 void Player::HandleMovement(float dt, const Vec3& camF, const Vec3& camR) {
-	// カメラの水平成分を正規化
-	Vec3 f = camF;
-	f.y = 0.0f;
-	Vec3 r = camR;
-	r.y = 0.0f;
+	// 水平前/右ベクトル（正規化想定）
 	auto norm = [](Vec3 v) {
 		float m = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-		if (m < 1e-5f)
-			return Vec3{0, 0, 0};
-		return Vec3{v.x / m, v.y / m, v.z / m};
+		return (m > 1e-5f) ? Vec3{v.x / m, v.y / m, v.z / m} : Vec3{0, 0, 0};
 	};
+	Vec3 f = camF;
+	f.y = 0.0f;
 	f = norm(f);
+	Vec3 r = camR;
+	r.y = 0.0f;
 	r = norm(r);
 
 	// 入力方向
@@ -85,27 +84,24 @@ void Player::HandleMovement(float dt, const Vec3& camF, const Vec3& camR) {
 		wish += r * -1.0f;
 	wish = norm(wish);
 
-	// 目標水平速度（m/s）
+	// 目標水平速度
 	const float speed = onGround_ ? moveSpeed : (moveSpeed * airControl);
 	const Vec3 targetVel = wish * speed;
 
 	// 現在の水平速度
 	Vec3 hv{vel_.x, 0.0f, vel_.z};
 
-	// フレームレート非依存の一次遅れ追従：alpha = 1 - exp(-λ dt)
-	// λ（応答速度）は好みで調整（地上速め/空中遅めにしてもよい）
-	const float lambda = onGround_ ? 8.0f : 5.0f; // [1/s] 応答の速さ
+	// 一次遅れ：alpha = 1 - exp(-λ dt)
+	const float lambda = onGround_ ? 8.0f : 5.0f;
 	const float alpha = 1.0f - std::exp(-lambda * dt);
-
 	hv += (targetVel - hv) * alpha;
 
 	vel_.x = hv.x;
 	vel_.z = hv.z;
 }
 
-
 void Player::HandleJumpAndGlide(float dt) {
-	// ジャンプ（Space 立ち上がり）
+	// 二段ジャンプ
 	if (KeyPressed(VK_SPACE)) {
 		if (onGround_) { // 1段目
 			vel_.y = jumpVelocity;
@@ -117,19 +113,19 @@ void Player::HandleJumpAndGlide(float dt) {
 		}
 	}
 
-	// 重力 or 滑空
+	// 滑空：下降中にSpace押し続けで重力軽減
 	bool gliding = (!onGround_) && KeyDown(VK_SPACE) && (vel_.y < 0.0f);
 	float g = gravity * (gliding ? glideGravityScale : 1.0f);
 	vel_.y -= g * dt;
 
-	// 落下最高速度クランプ
+	// 終端速度（落下制限）
 	vel_.y = std::max(vel_.y, -50.0f);
 }
 
 void Player::HandleDodge(float dt) {
-	// 回避入力（LeftShift）— クールダウン中でなく地上/空中どちらでもOK
+	// クールダウン中でなく、LeftShiftで回避
 	if (!dodging_ && dodgeCooldownTimer_ <= 0.0f && KeyPressed(VK_LSHIFT)) {
-		// 入力方向がなければ前方へ
+		// 入力方向が無ければ前方へ
 		Vec3 dir{0, 0, 0};
 		if (KeyDown('W'))
 			dir.z += 1;
@@ -140,9 +136,9 @@ void Player::HandleDodge(float dt) {
 		if (KeyDown('A'))
 			dir.x -= 1;
 		float len = std::sqrt(dir.x * dir.x + dir.z * dir.z);
-		if (len < 1e-4f)
+		if (len < 1e-4f) {
 			dir = {0, 0, 1};
-		else {
+		} else {
 			dir.x /= len;
 			dir.z /= len;
 		}
@@ -151,7 +147,8 @@ void Player::HandleDodge(float dt) {
 		dodgeTimer_ = dodgeTime;
 		dodgeCooldownTimer_ = dodgeCooldown;
 		dodgeDir_ = dir;
-		// 瞬間的な水平速度付与
+
+		// 水平速度を一瞬だけ上書き
 		vel_.x = dir.x * dodgeSpeed;
 		vel_.z = dir.z * dodgeSpeed;
 	}
