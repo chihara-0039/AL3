@@ -7,7 +7,6 @@
 using namespace KamataEngine;
 
 
-// GameScene.cpp 先頭（include群のあと）に追加
 static KamataEngine::Model* TryLoadAnyModel(const std::initializer_list<const char*>& names) {
 	for (auto* name : names) {
 		auto* m = KamataEngine::Model::CreateFromOBJ(name, true);
@@ -23,9 +22,46 @@ static KamataEngine::Model* TryLoadAnyModel(const std::initializer_list<const ch
 	return nullptr;
 }
 
+static inline void YawPitchFromVector(const Vec3& v, float& outYaw, float& outPitch) {
+	float len = std::sqrtf(v.x * v.x + v.z * v.z);
+	outYaw = std::atan2f(v.x, v.z);
+	outPitch = std::atan2f(-v.y, len);
+}
+
 
 
 static bool KeyDown(int vk) { return (GetAsyncKeyState(vk) & 0x8000) != 0; }
+
+
+void SnapCameraToPlayer(OrbitCameraController& camCtrl, KamataEngine::Camera& camera, const Vec3& playerPos) {
+	// 注視点（少し上）
+	Vec3 look{playerPos.x, playerPos.y + 1.5f, playerPos.z};
+
+	// いまの目線→注視点ベクトル
+	Vec3 curEye{camera.translation_.x, camera.translation_.y, camera.translation_.z};
+	Vec3 toLook{look.x - curEye.x, look.y - curEye.y, look.z - curEye.z};
+
+	float yaw = 0.f, pitch = 0.f;
+	YawPitchFromVector(toLook, yaw, pitch);
+
+	const float snapDist = 6.0f;
+
+	// 目標＆現在を同時に更新（ガタつき防止）
+	camCtrl.yaw = camCtrl.yawT = yaw;
+	camCtrl.pitch = camCtrl.pitchT = pitch;
+	camCtrl.dist = camCtrl.distT = snapDist;
+
+	// すぐ反映
+	Vec3 eye, rot;
+	camCtrl.ComputeEyeAndRot(eye, rot);
+	camera.translation_ = {eye.x, eye.y, eye.z};
+	camera.rotation_ = {rot.x, rot.y, rot.z};
+	camera.UpdateMatrix();
+
+	OutputDebugStringA("[F1] Snap camera to player (edge)\n");
+}
+
+
 
 bool GameScene::KeyPressed(int vk) {
 	static uint8_t latch[256] = {};
@@ -83,6 +119,11 @@ void GameScene::Update() {
 	// 入力カメラ更新
 	camCtrl_.SetTarget(player_.Position());
 	camCtrl_.Update(deltaTime_);
+
+	if (KeyPressed(VK_F1)) {
+		SnapCameraToPlayer(camCtrl_, camera_, player_.Position());
+	}
+
 
 	// プレイヤー更新（カメラ基底で移動）
 	Vec3 fwd, right;
