@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <memory>
 
+using namespace KamataEngine;
+
 class GameScene {
 public:
 	~GameScene();
@@ -15,13 +17,13 @@ private:
 	uint32_t textureHandle_ = 0;
 
 	// モデル（1つ表示するだけの最小）
-	KamataEngine::Model* model_ = nullptr;
+	Model* model_ = nullptr;
 
 	// 各オブジェクト用：ワールド変換（今回は1つ）
-	std::unique_ptr<KamataEngine::WorldTransform> worldTransform_;
+	std::unique_ptr<WorldTransform> worldTransform_;
 
 	// シーンで共有：ビュープロジェクション（カメラ）
-	KamataEngine::ViewProjection viewProjection_;
+	ViewProjection viewProjection_;
 
 	// ちょい回転させて動きを確認
 	float angleY_ = 0.0f;
