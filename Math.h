@@ -1,26 +1,103 @@
 #pragma once
-#include <cmath>
+#include "KamataEngine.h"
 
-struct Vec3 {
-	float x = 0, y = 0, z = 0;
-
-	Vec3 operator+(const Vec3& o) const { return {x + o.x, y + o.y, z + o.z}; }
-	Vec3 operator-(const Vec3& o) const { return {x - o.x, y - o.y, z - o.z}; }
-	Vec3 operator*(float s) const { return {x * s, y * s, z * s}; }
-	Vec3& operator+=(const Vec3& o) {
-		x += o.x;
-		y += o.y;
-		z += o.z;
-		return *this;
-	}
+/// AL3サンプルプログラム用の数学ライブラリ。
+/// MT3準拠で、KamataEngine内部の数学ライブラリと重複する。
+/*
+struct Matrix4x4 final {
+    float m[4][4];
 };
 
-inline float Length(const Vec3& v) { return std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
-inline Vec3 Normalize(const Vec3& v) {
-	float m = Length(v);
-	if (m < 1e-6f)
-		return {0, 0, 0};
-	return {v.x / m, v.y / m, v.z / m};
-}
-inline Vec3 Cross(const Vec3& a, const Vec3& b) { return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x}; }
-inline float Clamp(float v, float a, float b) { return (v < a) ? a : (v > b) ? b : v; }
+struct Vector4 final {
+    float x;
+    float y;
+    float z;
+    float w;
+};
+
+struct Vector3 final {
+    float x;
+    float y;
+    float z;
+};
+
+struct Vector2 final {
+    float x;
+    float y;
+};
+*/
+using namespace KamataEngine;
+
+// 円周率
+const float PI = 3.141592654f;
+
+struct AABB {
+	Vector3 min;
+	Vector3 max;
+};
+
+// 02_14 29枚目 単項演算子オーバーロード
+Vector3 operator+(const Vector3& v);
+Vector3 operator-(const Vector3& v);
+
+// 02_06のCameraControllerのUpdate/Reset関数で必要
+const Vector3 operator+(const Vector3& lhv, const Vector3& rhv);
+
+// 02_06のスライド24枚目のLerp関数
+Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
+
+// 02_06 スライド29枚目で追加
+const Vector3 operator*(const Vector3& v1, const float f);
+
+// 代入演算子オーバーロード
+Vector3& operator+=(Vector3& lhs, const Vector3& rhv);
+Vector3& operator-=(Vector3& lhs, const Vector3& rhv);
+Vector3& operator*=(Vector3& v, float s);
+Vector3& operator/=(Vector3& v, float s);
+
+// 単位行列の作成
+Matrix4x4 MakeIdentityMatrix();
+// スケーリング行列の作成
+Matrix4x4 MakeScaleMatrix(const Vector3& scale);
+// 回転行列の作成
+Matrix4x4 MakeRotateXMatrix(float theta);
+Matrix4x4 MakeRotateYMatrix(float theta);
+Matrix4x4 MakeRotateZMatrix(float theta);
+// 平行移動行列の作成
+Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
+// アフィン変換行列の作成
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rot, const Vector3& translate);
+
+// 代入演算子オーバーロード
+Matrix4x4& operator*=(Matrix4x4& lhm, const Matrix4x4& rhm);
+
+// 2項演算子オーバーロード
+Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2);
+
+// ワールドトランスフォーム更新(02_03の最後)
+void WorldTransformUpdate(WorldTransform& worldTransform);
+
+float Lerp(float x1, float x2, float t);
+
+float EaseIn(float x1, float x2, float t);
+
+float EaseOut(float x1, float x2, float t);
+
+float EaseInOut(float x1, float x2, float t);
+
+bool IsCollision(const AABB& aabb1, const AABB& aabb2);
+
+Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
+
+// 02_15 で追加
+inline float ToRadians(float degrees) { return degrees * (3.1415f / 180.0f); }
+inline float ToDegrees(float radians) { return radians * (180.0f / 3.1415f); }
+
+// ベクトルの長さを求める
+float Length(const Vector3& v);
+
+// ベクトルを正規化する（方向だけにする）
+Vector3 Normalized(const Vector3& v);
+
+// ベクトル変換
+Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m);

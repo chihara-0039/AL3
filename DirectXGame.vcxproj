@@ -109,7 +109,6 @@
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math.cpp" />
-    <ClCompile Include="MatrixMath.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerBullet.cpp" />
   </ItemGroup>
@@ -191,7 +190,6 @@
   <ItemGroup>
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Math.h" />
-    <ClInclude Include="MatrixMath.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerBullet.h" />
   </ItemGroup>

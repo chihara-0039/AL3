@@ -1,6 +1,6 @@
 #pragma once
 #include "KamataEngine.h"
-#include "MatrixMath.h"
+#include "Math.h"
 
 using namespace KamataEngine;
 
