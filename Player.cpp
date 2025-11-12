@@ -2,7 +2,6 @@
 #include "Math.h"
 #include <cassert>
 #include <cmath>
-#include <numbers>
 
 void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 
@@ -120,8 +119,8 @@ void Player::Attack() {
 	if (input_->TriggerKey(DIK_SPACE)) {
 
 		// 弾の速度
-		const float kBulletSpped = 1.0f;
-		Vector3 velocity(0, 0, kBulletSpped);
+		const float kBulletSpeed = 1.0f;
+		Vector3 velocity(0.0f, 0.0f, kBulletSpeed);
 
 		// 速度ベクトルを自機の向きに合わせて回転させる
 		velocity = TransformNormal(velocity, worldTransform_.matWorld_);
@@ -135,9 +134,34 @@ void Player::Attack() {
 	}
 }
 
+//狙い点へ撃つAPI
+void Player::FireToward(const Vector3& targetWorld) {
+	// 弾の速度
+	const float kBulletSpeed = 1.5f;
+
+	// 自機から音来店へのベクトル計算
+	Vector3 direction = targetWorld - worldTransform_.translation_;
+
+	// 正規化して速度ベクトルを作成
+	direction = Normalized(direction);
+
+	// 速度ベクトルに弾速を掛ける
+	Vector3 velocity = direction * kBulletSpeed;
+
+	// 弾を生成し、初期化
+	PlayerBullet* newBullet = new PlayerBullet();
+
+	// 弾の初期位置を自機の位置に設定
+	newBullet->Initialize(model_, worldTransform_.translation_, velocity);
+
+	// 弾を登録する
+	bullets_.push_back(newBullet);
+}
+
 Player::~Player() {
 
 	for (PlayerBullet* bullet : bullets_) {
 		delete bullet;
 	}
 }
+

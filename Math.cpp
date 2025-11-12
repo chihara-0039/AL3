@@ -18,6 +18,12 @@ const Vector3 operator+(const Vector3& v1, const Vector3& v2) {
 	return temp += v2;
 }
 
+//２項演算子の減算
+const Vector3 operator-(const Vector3& v1, const Vector3& v2) {
+	Vector3 temp(v1);
+	return temp -= v2;
+}
+
 // 02_06のスライド24枚目のLerp関数
 Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) { return Vector3(Lerp(v1.x, v2.x, t), Lerp(v1.y, v2.y, t), Lerp(v1.z, v2.z, t)); }
 
@@ -131,8 +137,60 @@ Matrix4x4& operator*=(Matrix4x4& lhm, const Matrix4x4& rhm) {
 
 Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 result = m1;
-
 	return result *= m2;
+}
+
+//4x4 逆行列
+Matrix4x4 Inverse(const Matrix4x4& a) { 
+	Matrix4x4 m = a;
+	Matrix4x4 inv = MakeIdentityMatrix();
+
+	//前進消去
+	for (int i = 0; i < 4; ++i) {
+		//ピポット選択（最大接待地）
+		int p = i;
+		float maxv = std::fabs(m.m[i][i]);
+		for (int r = i + 1; r < 4; ++r) {
+			float v = std::fabs(m.m[r][i]);
+			if (v > maxv) {
+				maxv = v;
+				p = r;
+			}
+		}
+
+		//退化対策（極端に小さいときは単位行列を返す）
+		if (maxv < 1e-8f) {
+			return MakeIdentityMatrix();
+		}
+
+		//行入れ替え
+		if (p != i) {
+			for (int c = 0; c < 4; ++c) {
+				std::swap(m.m[i][c], m.m[p][c]);
+				std::swap(inv.m[i][c], inv.m[p][c]);
+			}
+		}
+
+		//ピポットを１に正規化
+		float pivot = m.m[i][i];
+		for (int c = 0; c < 4; ++c) {
+			m.m[i][c] /= pivot;
+			inv.m[i][c] /= pivot;
+		}
+
+		//列iを消去
+		for (int r = 0;r < 4; ++r) {
+			if (r == i) {
+				continue;
+			}
+			float f = m.m[r][i];
+			for (int c = 0; c < 4; ++c) {
+				m.m[r][c] -= f * m.m[i][c];
+				inv.m[r][c] -= f * inv.m[i][c];
+			}
+		}
+	}
+	return inv;
 }
 
 // ワールドトランスフォーム更新(02_03の最後)

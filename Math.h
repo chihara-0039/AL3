@@ -43,6 +43,9 @@ Vector3 operator-(const Vector3& v);
 // 02_06のCameraControllerのUpdate/Reset関数で必要
 const Vector3 operator+(const Vector3& lhv, const Vector3& rhv);
 
+// ２項演算子の減算
+const Vector3 operator-(const Vector3& lhv, const Vector3& rhv);
+
 // 02_06のスライド24枚目のLerp関数
 Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
 
@@ -101,3 +104,6 @@ Vector3 Normalized(const Vector3& v);
 
 // ベクトル変換
 Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m);
+
+//4x4逆行列（一般行列）
+Matrix4x4 Inverse(const Matrix4x4& m);
