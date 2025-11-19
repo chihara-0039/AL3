@@ -6,16 +6,24 @@
 using namespace KamataEngine;
 
 //マウスクリックを検出
+//namespace {
+//	bool LeftClickTriggered() { 
+//		static bool wasDown = false;
+//	    const bool isDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+//	    const bool triggered = isDown && !wasDown;
+//	    wasDown = isDown;
+//	    return triggered;
+//	}
+//}
+
+
+// 左クリック長押し検出（押下状態）
 namespace {
-	bool LeftClickTriggered() { 
-		static bool wasDown = false;
-	    const bool isDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-	    const bool triggered = isDown && !wasDown;
-	    wasDown = isDown;
-	    return triggered;
+	inline bool LeftDown() {
+		return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		
 	}
 }
-
 
 
 void GameScene::Initialize() {
@@ -106,9 +114,16 @@ void GameScene::Update() {
 
 
 
-	//発射トリガー
-	if (LeftClickTriggered()) {
+	 // 連射：長押し中は一定フレーム間隔で発射
+	static int fireCooldown = 0;
+	const int kFireInterval = 6; // 6フレーム毎に発射（= 10fps相当 / 60fps時）。好みで調整
+	if (fireCooldown > 0) {
+		--fireCooldown;
+	}
+	if (LeftDown() && fireCooldown == 0) {
 		player_->FireToward(targetWorld);
+		fireCooldown = kFireInterval;
+		
 	}
 }
 

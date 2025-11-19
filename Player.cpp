@@ -139,6 +139,9 @@ void Player::FireToward(const Vector3& targetWorld) {
 	// 弾の速度
 	const float kBulletSpeed = 1.5f;
 
+	//銃口オフセット（見た目で調整）
+	//const float kMuzzleOffset = 1.5f;
+
 	// 自機から音来店へのベクトル計算
 	Vector3 direction = targetWorld - worldTransform_.translation_;
 

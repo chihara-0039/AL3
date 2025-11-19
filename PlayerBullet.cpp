@@ -19,6 +19,10 @@ void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vecto
 
 	// 引数で受け取った速度をメンバー変数に代入
 	velocity_ = velocity;
+
+	// 初期フレームから正しい位置で描画されるようにワールドトランスフォームを更新
+	WorldTransformUpdate(worldTransform_);
+	worldTransform_.TransferMatrix();
 }
 
 void PlayerBullet::Update() {
