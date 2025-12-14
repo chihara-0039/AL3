@@ -1,6 +1,6 @@
 #include "PlayerBullet.h"
 
-void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vector3& velocity) {
+void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vector3& velocity, int32_t damage) {
 
 	// NULLポインタチェック
 	assert(model);
@@ -19,6 +19,9 @@ void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vecto
 
 	// 引数で受け取った速度をメンバー変数に代入
 	velocity_ = velocity;
+
+	// ダメージ設定
+	damage_ = damage;
 
 	// 初期フレームから正しい位置で描画されるようにワールドトランスフォームを更新
 	WorldTransformUpdate(worldTransform_);

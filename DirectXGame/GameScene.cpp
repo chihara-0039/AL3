@@ -2,57 +2,65 @@
 #include "KamataEngine.h"
 #include "Math.h"
 #include <Windows.h>
+#include <cmath>
 
 using namespace KamataEngine;
 
-//マウスクリックを検出
-//namespace {
-//	bool LeftClickTriggered() { 
-//		static bool wasDown = false;
-//	    const bool isDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-//	    const bool triggered = isDown && !wasDown;
-//	    wasDown = isDown;
-//	    return triggered;
-//	}
-//}
-
-
 // 左クリック長押し検出（押下状態）
 namespace {
-	inline bool LeftDown() {
-		return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-		
-	}
-}
-
+inline bool LeftDown() { return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0; }
+} // namespace
 
 void GameScene::Initialize() {
 
 	// モデルのロード
 	player_model_ = Model::CreateFromOBJ("player");
 
+	// 敵モデルのロード
+	enemy_model_ = Model::CreateFromOBJ("player");
+
+	// ファンネル本体のモデル（なければ player を流用でOK）
+	funnel_model_ = Model::CreateFromOBJ("funnel");       // 無ければ "player"
+	funnelBullet_model_ = Model::CreateFromOBJ("funnel"); // 無ければ "player"
+
 	// カメラ初期化
 	camera_.Initialize();
+	camera_.translation_ = {0.0f, 0.0f, -10.0f};
+	camera_.UpdateMatrix();
 
-	// カメラ位置をプレイヤーに近づける
-	camera_.translation_ = {0.0f, 0.0f, -10.0f}; // Y:高さ、Z:奥行き
-	camera_.UpdateMatrix();                      // 行列更新
-
-	// デバッグカメラ作成
+	// デバッグカメラ
 	debugCamera_ = new DebugCamera(1280, 720);
 
-	// プレイヤー初期化（座標など）
+	// プレイヤー初期化
 	player_ = new Player();
 	player_->Initialize(player_model_, &camera_, {0.0f, 0.0f, 0.0f});
+
+	 // ★ 敵初期化（画面奥に1体）
+	enemy_ = new Enemy();
+	enemy_->Initialize(enemy_model_, &camera_, {0.0f, 0.0f, 30.0f});
+
+
+	// ファンネルの回転中心（画面奥）
+	Vector3 funnelCenter = {0.0f, 0.0f, 30.0f};
+
+	const int kFunnelCount = 3;
+	const float kFunnelRadius = 6.0f;
+
+	for (int i = 0; i < kFunnelCount; ++i) {
+		float angle = ToRadians(360.0f / kFunnelCount * i); // 均等配置
+		Funnel* funnel = new Funnel();
+		funnel->Initialize(funnel_model_, &camera_, funnelCenter, kFunnelRadius, angle);
+		funnels_.push_back(funnel);
+	}
+
+	// 攻撃タイマー初期値
+	funnelAttackTimer_ = 60; // 1秒後に最初の攻撃
 }
 
 void GameScene::Update() {
 
 #ifdef _DEBUG
-	//// スペースキーでデバッグカメラ切り替え
-	// if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
-	//	isDebugCameraActive_ = !isDebugCameraActive_;
-	// }
+	// デバッグカメラ切り替えなど…
 #endif
 
 	if (isDebugCameraActive_) {
@@ -67,84 +75,226 @@ void GameScene::Update() {
 	// プレイヤー更新
 	player_->Update();
 
-	//=== マウス照準で撃つ（←クリックで発射・深度アリ）＝＝＝
-	const float kWindowWith = 1280.0f;
-	const float kWindowHeight = 720.0f;
-	
-
-	//マウス位置取得
-	Vector2 mouse{};
-	if (Input::GetInstance()) {
-		mouse = Input::GetInstance()->GetMousePosition(); //(px, px) 例：左上(0,0) 右下(1280,720)
-
+	// --------- ファンネル本体の更新 ----------
+	Vector3 funnelCenter = {0.0f, 0.0f, 30.0f};
+	for (Funnel* funnel : funnels_) {
+		funnel->Update(funnelCenter);
 	}
 
-	// スクリーン座標をNDCに変換
-	const float ndcX = (mouse.x / kWindowWith) * 2.0f - 1.0f;
-	const float ndcY = -((mouse.y / kWindowHeight) * 2.0f - 1.0f); // Y座標は上下逆
+	// --------- ファンネル攻撃（奥からビーム） ----------
+	const int kAttackInterval = 60;        // 1秒ごとに攻撃
+	const float kFunnelBulletSpeed = 0.6f; // ビームの速さ
 
-	// View*Projectionの逆行列を計算
-	Matrix4x4 vp = camera_.matView * camera_.matProjection; // View→Projection変換行列
-	Matrix4x4 invVP = Inverse(vp);                          // 逆行列
+	if (--funnelAttackTimer_ <= 0) {
+		funnelAttackTimer_ = kAttackInterval;
 
-	// NDC→ワールド座標変換
+		// プレイヤーの現在位置
+		Vector3 playerPos = player_->GetWorldPosition();
+
+		// 各ファンネルからプレイヤーに向かって弾を飛ばす
+		for (Funnel* funnel : funnels_) {
+			Vector3 start = funnel->GetWorldPosition();
+			Vector3 dir = Normalized(playerPos - start); // 3D方向ベクトル
+			Vector3 vel = dir * kFunnelBulletSpeed;
+
+			FunnelBullet* bullet = new FunnelBullet();
+			bullet->Initialize(funnelBullet_model_, start, vel);
+			funnelBullets_.push_back(bullet);
+		}
+	}
+
+	// --------- ファンネル弾の更新＆削除 ----------
+	funnelBullets_.remove_if([](FunnelBullet* bullet) {
+		if (bullet->IsDead()) {
+			delete bullet;
+			return true;
+		}
+		bullet->Update();
+		return false;
+	});
+
+	// （ここに「プレイヤーのマウス照準ショット」の処理が続く）
+	//   既存の Unproject → targetWorld → player_->FireToward(targetWorld)
+	//   のブロックはそのまま残してOK
+
+	 //========================================
+	// プレイヤーのマウス照準 5連バースト処理
+	//========================================
+
+	const float kWindowWidth = 1280.0f;
+	const float kWindowHeight = 720.0f;
+
+	// マウス座標取得（画面左上が(0,0)）
+	Vector2 mouse{};
+	if (Input::GetInstance()) {
+		mouse = Input::GetInstance()->GetMousePosition();
+	}
+
+	// スクリーン座標 → NDC(-1～1) へ変換
+	const float ndcX = (mouse.x / kWindowWidth) * 2.0f - 1.0f;
+	const float ndcY = -((mouse.y / kWindowHeight) * 2.0f - 1.0f); // 上下反転
+
+	// View * Projection の逆行列
+	Matrix4x4 vp = camera_.matView * camera_.matProjection;
+	Matrix4x4 invVP = Inverse(vp);
+
+	// NDC → ワールド座標
 	auto Unproject = [&](float x, float y, float z01) -> Vector3 {
-		// 同次座標
-		float vx = x, vy = y, vz = z01, vw = 1.0f;
-		// 逆行列で変換	(invVP * (x,y,z,1))
+		float vx = x;
+		float vy = y;
+		float vz = z01;
+		float vw = 1.0f;
+
 		Vector3 out{};
 		float ox = vx * invVP.m[0][0] + vy * invVP.m[1][0] + vz * invVP.m[2][0] + vw * invVP.m[3][0];
-		float oy = +vx * invVP.m[0][1] + vy * invVP.m[1][1] + vz * invVP.m[2][1] + vw * invVP.m[3][1];
-		float oz = +vx * invVP.m[0][2] + vy * invVP.m[1][2] + vz * invVP.m[2][2] + vw * invVP.m[3][2];
-		float ow = +vx * invVP.m[0][3] + vy * invVP.m[1][3] + vz * invVP.m[2][3] + vw * invVP.m[3][3];
-		if (std::fabs(ow) < 1e-8f)
+		float oy = vx * invVP.m[0][1] + vy * invVP.m[1][1] + vz * invVP.m[2][1] + vw * invVP.m[3][1];
+		float oz = vx * invVP.m[0][2] + vy * invVP.m[1][2] + vz * invVP.m[2][2] + vw * invVP.m[3][2];
+		float ow = vx * invVP.m[0][3] + vy * invVP.m[1][3] + vz * invVP.m[2][3] + vw * invVP.m[3][3];
+
+		if (std::fabs(ow) < 1e-8f) {
 			ow = 1.0f;
+		}
+
 		out.x = ox / ow;
 		out.y = oy / ow;
 		out.z = oz / ow;
 		return out;
 	};
 
-	const Vector3 nearWorld = Unproject(ndcX, ndcY, 0.0f); // クリップ空間の手前
-	const Vector3 farWorld = Unproject(ndcX, ndcY, 1.0f);                                                      // クリップ空間の奥
-	Vector3 rayDir = Normalized(farWorld - nearWorld);                                                         // レイ方向
-	                                                                                                         // 弾はレイ上の充分遠い点へ向けて撃つ（既存の FireToward を活用）
-	const float kShootDepth = 100.0f;                                                                        // “奥行き”の飛ばし量（調整用）
+	const Vector3 nearWorld = Unproject(ndcX, ndcY, 0.0f);
+	const Vector3 farWorld = Unproject(ndcX, ndcY, 1.0f);
+	Vector3 rayDir = Normalized(farWorld - nearWorld);
+
+	// レイ上の奥の点を狙い位置とする
+	const float kShootDepth = 100.0f;
 	Vector3 targetWorld = nearWorld + rayDir * kShootDepth;
 
+	// --- 5連バースト ---
+	static int burstCount = 0;      // 残り何発か
+	static int intraBurstTimer = 0; // バースト内の弾間隔
+	static int burstCooldown = 0;   // バースト終了後のクールタイム
 
+	const int kBurstSize = 5;          // 1バーストの弾数
+	const int kIntraBurstInterval = 3; // バースト内の弾間隔（フレーム）
+	const int kBurstCooldown = 20;     // バースト終了後のクールタイム（フレーム）
 
-	 // 連射：長押し中は一定フレーム間隔で発射
-	static int fireCooldown = 0;
-	const int kFireInterval = 6; // 6フレーム毎に発射（= 10fps相当 / 60fps時）。好みで調整
-	if (fireCooldown > 0) {
-		--fireCooldown;
+	if (LeftDown()) {
+		// まだバーストしてなくてクールタイムも終わってたら新しいバースト開始
+		if (burstCount == 0 && burstCooldown == 0) {
+			burstCount = kBurstSize;
+			intraBurstTimer = 0;
+		}
+	} else {
+		// ボタン離したら即リセット（次押しでまた5発から）
+		burstCount = 0;
+		intraBurstTimer = 0;
+		burstCooldown = 0;
 	}
-	if (LeftDown() && fireCooldown == 0) {
-		player_->FireToward(targetWorld);
-		fireCooldown = kFireInterval;
-		
+
+	// クールタイム進行
+	if (burstCooldown > 0) {
+		--burstCooldown;
+	}
+
+	// バースト進行
+	if (burstCount > 0) {
+		if (intraBurstTimer == 0) {
+			// 1発撃つ（マウスカーソル方向）
+			player_->FireToward(targetWorld);
+
+			--burstCount;
+			intraBurstTimer = kIntraBurstInterval;
+
+			// 撃ち切ったらクールタイム開始
+			if (burstCount == 0) {
+				burstCooldown = kBurstCooldown;
+			}
+		} else {
+			--intraBurstTimer;
+		}
+	}
+
+	//=========================
+	// プレイヤー弾 vs 敵 の当たり判定
+	//=========================
+	if (enemy_ && !enemy_->IsDead()) {
+
+		AABB enemyBox = enemy_->GetAABB();
+
+		const auto& bullets = player_->GetBullets();
+		for (PlayerBullet* bullet : bullets) {
+
+			if (bullet->IsDead()) {
+				continue;
+			}
+
+			Vector3 bpos = bullet->GetWorldPosition();
+			const float r = 0.5f; // 弾の“半径”。見た目に合わせて調整
+
+			AABB bulletBox;
+			bulletBox.min = {bpos.x - r, bpos.y - r, bpos.z - r};
+			bulletBox.max = {bpos.x + r, bpos.y + r, bpos.z + r};
+
+			if (IsCollision(enemyBox, bulletBox)) {
+				enemy_->OnHit(bullet->GetDamage());
+				bullet->OnHit();
+			}
+		}
 	}
 }
 
+
 void GameScene::Draw() {
 
-	// DirectX共通処理取得
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
-	// 3Dモデル描画前処理
 	Model::PreDraw(dxCommon->GetCommandList());
 
 	// プレイヤー描画
 	player_->Draw();
 
-	// 3Dモデル描画後処理
+	// 敵描画（★ nullptr チェックを追加）
+	if (enemy_) {
+		enemy_->Draw();
+	}
+
+	// ファンネル描画
+	for (Funnel* funnel : funnels_) {
+		funnel->Draw();
+	}
+
+	// ファンネル弾描画
+	for (FunnelBullet* bullet : funnelBullets_) {
+		bullet->Draw(camera_);
+	}
+
 	Model::PostDraw();
 }
+
 
 void GameScene::Delete() {
 
 	delete player_;
 	delete player_model_;
+
+	 // 敵解放
+	delete enemy_;
+	delete enemy_model_;
+	enemy_ = nullptr;
+	enemy_model_ = nullptr;
+
+	for (Funnel* funnel : funnels_) {
+		delete funnel;
+	}
+	funnels_.clear();
+
+	for (FunnelBullet* bullet : funnelBullets_) {
+		delete bullet;
+	}
+	funnelBullets_.clear();
+
+	delete funnel_model_;
+	delete funnelBullet_model_;
+
 	delete debugCamera_;
 }

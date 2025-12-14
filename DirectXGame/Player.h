@@ -16,19 +16,26 @@ public:
 	/// 描画
 	void Draw();
 
+	/// <summary>
+	/// 攻撃（スペースキー用）
+	/// </summary>
+	void Attack();
+
 	// ★ 追加：狙い点へ撃つAPI（GameSceneから呼ぶ）
 	void FireToward(const Vector3& targetWorld);
 
-
-	/// <summary>
-	/// 攻撃
-	/// </summary>
-	void Attack();
+	/// プレイヤーのワールド座標（中心）取得
+	Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
 
 	/// <summary>
 	/// デストラクタ
 	/// </summary>
 	~Player();
+
+	/// <summary>
+	/// 弾リスト（当たり判定用に参照させる）
+	/// </summary>
+	const std::list<PlayerBullet*>& GetBullets() const { return bullets_; }
 
 private:
 	// ワールド変換データ

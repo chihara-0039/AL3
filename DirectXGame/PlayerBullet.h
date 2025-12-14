@@ -13,7 +13,8 @@ public:
 	/// <param name="model">モデル</param>
 	/// <param name="position">初期座標</param>
 	/// <param name="velocity">速度</param>
-	void Initialize(Model* model, const Vector3& position, const Vector3& velocity);
+	/// <param name="damage">ダメージ</param>
+	void Initialize(Model* model, const Vector3& position, const Vector3& velocity, int32_t damage = 1);
 
 	/// <summary>
 	/// 更新
@@ -27,6 +28,21 @@ public:
 	void Draw(const Camera& camera);
 
 	bool IsDead() const { return isDead_; }
+
+	/// <summary>
+	/// 弾のワールド座標取得
+	/// </summary>
+	Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
+
+	/// <summary>
+	/// この弾のダメージ値
+	/// </summary>
+	int32_t GetDamage() const { return damage_; }
+
+	/// <summary>
+	/// 当たったときに呼ぶ（即死）
+	/// </summary>
+	void OnHit() { isDead_ = true; }
 
 private:
 	// ワールド変換データ
@@ -49,4 +65,7 @@ private:
 
 	// デスフラグ
 	bool isDead_ = false;
+
+	// ダメージ値
+	int32_t damage_ = 1;
 };

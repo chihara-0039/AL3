@@ -1,34 +1,44 @@
 #pragma once
+#include "Funnel.h"
+#include "FunnelBullet.h"
 #include "KamataEngine.h"
 #include "Player.h"
-#include <memory> // スマートポインタを使うなら
+#include "Enemy.h"
+#include <list>
+#include <memory>
+#include <vector>
 
 using namespace KamataEngine;
 
 // ゲームシーン
 class GameScene {
 public:
-	// 初期化
 	void Initialize();
-
-	// 更新
 	void Update();
-
-	// 描画
 	void Draw();
-
-	// デストラクタ
 	void Delete();
 
 private:
 	// プレイヤー
 	Player* player_ = nullptr;
-
 	// プレイヤー用モデル
 	Model* player_model_ = nullptr;
 
+	 // 敵（ボス）
+	Enemy* enemy_ = nullptr;
+	Model* enemy_model_ = nullptr;
+
 	// カメラ
 	Camera camera_;
+
+	// ファンネル本体
+	std::vector<Funnel*> funnels_;
+	Model* funnel_model_ = nullptr;
+
+	// ファンネル弾
+	std::list<FunnelBullet*> funnelBullets_;
+	Model* funnelBullet_model_ = nullptr;
+	int funnelAttackTimer_ = 0;
 
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0u;

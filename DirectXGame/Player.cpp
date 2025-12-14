@@ -17,14 +17,11 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	// サイズ調整
 	worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
 
-	// 初期向き
-	// 初期向き → 前向き（Z軸方向）に修正
-
 	// シングルトンインスタンスを取得する
 	input_ = Input::GetInstance();
 }
 
-void Player ::Update() {
+void Player::Update() {
 
 	// デスフラグの立った弾を削除
 	bullets_.remove_if([](PlayerBullet* bullet) {
@@ -34,17 +31,15 @@ void Player ::Update() {
 		}
 		return false;
 	});
+
 	// キャラクターの移動ベクトル
 	Vector3 move = {0.0f, 0.0f, 0.0f};
 
 	// 移動速度
 	const float kCharacterSpeed = 0.01f;
 
-	// const float kAcceleration = 0.01f;
 	const float kFriction = 0.9f;
 	const float kMaxSpeed = 3.0f;
-
-	// Vector3 acceleration = {0.0f, 0.0f, 0.0f};
 
 	if (input_->PushKey(DIK_W)) { // 前へ
 		move.y += kCharacterSpeed;
@@ -88,22 +83,20 @@ void Player ::Update() {
 	worldTransform_.translation_.y = max(worldTransform_.translation_.y, -kMoveLimitY);
 	worldTransform_.translation_.y = min(worldTransform_.translation_.y, +kMoveLimitY);
 
-	// 攻撃
-	Attack();
+	// 攻撃（スペースキー）
+	//Attack();
 
 	// 弾の更新
 	for (PlayerBullet* bullet : bullets_) {
-
 		bullet->Update();
 	}
 
 	// 行列更新
-	// worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
 	WorldTransformUpdate(worldTransform_);
 	worldTransform_.TransferMatrix();
 }
 
-void Player ::Draw() {
+void Player::Draw() {
 
 	// プレイヤーモデル描画
 	model_->Draw(worldTransform_, *camera_);
@@ -125,24 +118,25 @@ void Player::Attack() {
 		// 速度ベクトルを自機の向きに合わせて回転させる
 		velocity = TransformNormal(velocity, worldTransform_.matWorld_);
 
+		// 通常弾のダメージは1としておく
+		const int32_t kBulletDamage = 1;
+
 		// 弾を生成し、初期化
 		PlayerBullet* newBullet = new PlayerBullet();
-		newBullet->Initialize(model_, worldTransform_.translation_, velocity);
+		newBullet->Initialize(model_, worldTransform_.translation_, velocity, kBulletDamage);
 
 		// 弾を登録する
 		bullets_.push_back(newBullet);
 	}
 }
 
-//狙い点へ撃つAPI
+// 狙い点へ撃つAPI（マウス照準用）
 void Player::FireToward(const Vector3& targetWorld) {
+
 	// 弾の速度
 	const float kBulletSpeed = 1.5f;
 
-	//銃口オフセット（見た目で調整）
-	//const float kMuzzleOffset = 1.5f;
-
-	// 自機から音来店へのベクトル計算
+	// 自機から狙い点へのベクトル計算
 	Vector3 direction = targetWorld - worldTransform_.translation_;
 
 	// 正規化して速度ベクトルを作成
@@ -151,11 +145,14 @@ void Player::FireToward(const Vector3& targetWorld) {
 	// 速度ベクトルに弾速を掛ける
 	Vector3 velocity = direction * kBulletSpeed;
 
+	// マウス弾もダメージ1（後で変更したければここを変える）
+	const int32_t kBulletDamage = 1;
+
 	// 弾を生成し、初期化
 	PlayerBullet* newBullet = new PlayerBullet();
 
 	// 弾の初期位置を自機の位置に設定
-	newBullet->Initialize(model_, worldTransform_.translation_, velocity);
+	newBullet->Initialize(model_, worldTransform_.translation_, velocity, kBulletDamage);
 
 	// 弾を登録する
 	bullets_.push_back(newBullet);
@@ -167,4 +164,3 @@ Player::~Player() {
 		delete bullet;
 	}
 }
-
