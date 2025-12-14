@@ -35,6 +35,7 @@ void Enemy::Update() {
 	WorldTransformUpdate(worldTransform_);
 }
 
+
 void Enemy::Draw() {
 
 	if (isDead_) {
