@@ -83,8 +83,10 @@ void Player::Update() {
 	worldTransform_.translation_.y = max(worldTransform_.translation_.y, -kMoveLimitY);
 	worldTransform_.translation_.y = min(worldTransform_.translation_.y, +kMoveLimitY);
 
-	// 攻撃（スペースキー）
-	//Attack();
+	// 無敵タイマー
+	if (invincibleTimer_ > 0) {
+		--invincibleTimer_;
+	}
 
 	// 弾の更新
 	for (PlayerBullet* bullet : bullets_) {
@@ -101,9 +103,34 @@ void Player::Draw() {
 	// プレイヤーモデル描画
 	model_->Draw(worldTransform_, *camera_);
 
+	if (model_ == nullptr || camera_ == nullptr) {
+		return;
+	}
+
+	// 死亡済みなら描画しない
+	if (hp_ <= 0) {
+		return;
+	}
+
+
 	// 弾の描画
 	for (PlayerBullet* bullet : bullets_) {
 		bullet->Draw(*camera_);
+	}
+
+	 // 無敵中は点滅（フレームカウントでON/OFFを切り替える）
+	if (invincibleTimer_ > 0) {
+		// 2フレームごとに ON/OFF
+		if ((invincibleTimer_ / 2) % 2 == 0) {
+			// 描画する
+			model_->Draw(worldTransform_, *camera_);
+		} else {
+			// このフレームは描画しない
+			return;
+		}
+	} else {
+		// 通常
+		model_->Draw(worldTransform_, *camera_);
 	}
 }
 
@@ -128,6 +155,21 @@ void Player::Attack() {
 		// 弾を登録する
 		bullets_.push_back(newBullet);
 	}
+}
+
+void Player::OnHit(int famage) {
+	//すでに死んでいる or 無敵中なら無視
+	if (hp_ <= 0 || invincibleTimer_ > 0) {
+		return;
+	}
+
+	hp_ -= famage;
+	if (hp_ < 0) {
+		hp_ = 0; 
+	}
+
+	// 無敵タイマーセット
+	invincibleTimer_ = kInvincibleDuration;
 }
 
 // 狙い点へ撃つAPI（マウス照準用）

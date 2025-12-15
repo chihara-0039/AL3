@@ -48,4 +48,12 @@ private:
 
 	// デバッグカメラの有効フラグ
 	bool isDebugCameraActive_ = false;
+
+	enum class BossPattern { 
+		FunnelGatling,
+		FunnelBeam 
+	};
+
+	BossPattern currentPattern_ = BossPattern::FunnelGatling;
+	int patternTimer_ = 0;
 };

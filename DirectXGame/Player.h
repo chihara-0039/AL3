@@ -21,21 +21,35 @@ public:
 	/// </summary>
 	void Attack();
 
-	// ★ 追加：狙い点へ撃つAPI（GameSceneから呼ぶ）
+	// 狙い点へ撃つAPI（GameSceneから呼ぶ）
 	void FireToward(const Vector3& targetWorld);
 
 	/// プレイヤーのワールド座標（中心）取得
 	Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
+
+	// 当たり判定半径
+	float GetCollisionRadius() const { return collisionRadius_; }
+
+	//無敵状態か？
+	bool IsInvincible() const { return invincibleTimer_ > 0; }
+
+	//生きてるか？
+	bool IsDead() const { return hp_ <= 0; }
+
+	// 被弾処理
+	void OnHit(int damage);
+
+	/// <summary>
+	/// 弾リスト（当たり判定用に参照させる）
+	/// </summary>
+	const std::list<PlayerBullet*>& GetBullets() const { return bullets_; }
 
 	/// <summary>
 	/// デストラクタ
 	/// </summary>
 	~Player();
 
-	/// <summary>
-	/// 弾リスト（当たり判定用に参照させる）
-	/// </summary>
-	const std::list<PlayerBullet*>& GetBullets() const { return bullets_; }
+	
 
 private:
 	// ワールド変換データ
@@ -55,4 +69,15 @@ private:
 
 	// キーボード入力
 	Input* input_ = nullptr;
+
+	//HP
+	int32_t hp_ = 5;
+
+	// 無敵タイマー
+	int32_t invincibleTimer_ = 0;
+
+	static const int32_t kInvincibleDuration = 60; // 無敵時間（60フレーム＝1秒）
+
+	//プレイヤーの当たり判定の半径
+	float collisionRadius_ = 1.0f;
 };

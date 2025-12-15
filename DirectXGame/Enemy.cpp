@@ -38,22 +38,26 @@ void Enemy::Update() {
 
 void Enemy::Draw() {
 
-	if (isDead_) {
+	 // ★ 死亡済み or モデル/カメラが無いなら描画しない
+	if (isDead_ || model_ == nullptr || camera_ == nullptr) {
 		return;
 	}
 
-
-	// ★Model に色を設定するAPIがある場合はここで赤フラッシュ
-	/*
+	// ★ フラッシュ中は「描画しない」＝点滅して見える
 	if (flashTimer_ > 0) {
-	    // 被弾中は赤
-	    model_->SetColor({1.0f, 0.0f, 0.0f, 1.0f});
-	} else {
-	    // 通常時は白
-	    model_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+		// 何もしない → 一瞬消える
+		// flashTimer_ が残っている間は点滅させる
+		// 偶数フレームのときだけ描画する例
+		if ((flashTimer_ % 2) == 0) {
+			model_->Draw(worldTransform_, *camera_);
+		}
+		return;
 	}
-	*/
 
+	// 行列＋色を定数バッファに転送
+	WorldTransformUpdate(worldTransform_);
+	
+	//通常状態
 	model_->Draw(worldTransform_, *camera_);
 }
 
@@ -73,6 +77,9 @@ void Enemy::OnHit(int damage) {
 }
 
 AABB Enemy::GetAABB() const {
+
+	// 適当に箱を作る
+	Vector3 halfSize = {2.0f, 2.0f, 2.0f};
 
 	AABB box{};
 	const Vector3& pos = worldTransform_.translation_;

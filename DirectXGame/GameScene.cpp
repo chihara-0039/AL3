@@ -41,7 +41,7 @@ void GameScene::Initialize() {
 
 
 	// ファンネルの回転中心（画面奥）
-	Vector3 funnelCenter = {0.0f, 0.0f, 30.0f};
+	Vector3 funnelCenter = {0.0f, 0.0f, 0.0f};
 
 	const int kFunnelCount = 3;
 	const float kFunnelRadius = 6.0f;
@@ -71,9 +71,14 @@ void GameScene::Update() {
 	} else {
 		camera_.UpdateMatrix();
 	}
-
+	
 	// プレイヤー更新
 	player_->Update();
+
+	// 敵更新
+	if (enemy_) {
+		enemy_->Update();
+	}
 
 	// --------- ファンネル本体の更新 ----------
 	Vector3 funnelCenter = {0.0f, 0.0f, 30.0f};
@@ -81,37 +86,107 @@ void GameScene::Update() {
 		funnel->Update(funnelCenter);
 	}
 
-	// --------- ファンネル攻撃（奥からビーム） ----------
-	const int kAttackInterval = 60;        // 1秒ごとに攻撃
-	const float kFunnelBulletSpeed = 0.6f; // ビームの速さ
+	// ★ ここでファンネル弾の更新を入れる
+	for (FunnelBullet* bullet : funnelBullets_) {
+		bullet->Update();
+	}
 
-	if (--funnelAttackTimer_ <= 0) {
-		funnelAttackTimer_ = kAttackInterval;
+	// ★ プレイヤーとの当たり判定
+	Vector3 playerPos = player_->GetWorldPosition();
+	float playerR = player_->GetCollisionRadius();
+	const int kPlayerHitDamage = 1;
 
-		// プレイヤーの現在位置
-		Vector3 playerPos = player_->GetWorldPosition();
 
-		// 各ファンネルからプレイヤーに向かって弾を飛ばす
-		for (Funnel* funnel : funnels_) {
-			Vector3 start = funnel->GetWorldPosition();
-			Vector3 dir = Normalized(playerPos - start); // 3D方向ベクトル
-			Vector3 vel = dir * kFunnelBulletSpeed;
+	for (FunnelBullet* bullet : funnelBullets_) {
 
-			FunnelBullet* bullet = new FunnelBullet();
-			bullet->Initialize(funnelBullet_model_, start, vel);
-			funnelBullets_.push_back(bullet);
+		if (bullet->IsDead()) {
+			continue;
+		}
+
+		// すでに無敵中なら判定しなくてよい
+		if (player_->IsInvincible() || player_->IsDead()) {
+			break;
+		}
+
+		Vector3 bpos = bullet->GetWorldPosition();
+
+		Vector3 diff = bpos - playerPos;
+		float dist2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+		float r = playerR; // 弾の半径も足すならここで + something
+
+		if (dist2 <= r * r) {
+			// 被弾
+			player_->OnHit(kPlayerHitDamage);
+			// 弾は消す（OnHitが無ければ isDead_ を直接 true にする）
+			// bullet->OnHit();  // ないなら…
+			// bullet->SetDead(); みたいなのを作る
+
+			// とりあえず寿命切れ扱いにする例：
+			// （FunnelBullet に Kill() を追加した方が綺麗）
 		}
 	}
 
-	// --------- ファンネル弾の更新＆削除 ----------
+	// 死んだ弾の削除
 	funnelBullets_.remove_if([](FunnelBullet* bullet) {
 		if (bullet->IsDead()) {
 			delete bullet;
 			return true;
 		}
-		bullet->Update();
 		return false;
 	});
+
+	// --------- ファンネル攻撃（奥からビーム） ----------
+	// パターンタイマー進行
+	++patternTimer_;
+
+	// プレイヤー位置（狙い用）
+	playerPos = player_->GetWorldPosition();
+
+	switch (currentPattern_) {
+	case BossPattern::FunnelGatling: {
+
+		// 例：最初の60Fは準備（何もしない）
+		const int kPrepTime = 60;
+		const int kFireStartTime = kPrepTime;
+		const int kFireEndTime = kPrepTime + 240; // 4秒間撃ちまくる
+
+		const int kGatlingInterval = 5; // 5Fごとに1発
+		const float kBulletSpeed = 0.8f;
+
+		if (patternTimer_ >= kFireStartTime && patternTimer_ <= kFireEndTime) {
+
+			// 一定フレームごとに発射
+			if ((patternTimer_ % kGatlingInterval) == 0) {
+
+				for (Funnel* funnel : funnels_) {
+					Vector3 start = funnel->GetWorldPosition();
+					Vector3 dir = Normalized(playerPos - start);
+					Vector3 vel = dir * kBulletSpeed;
+
+					FunnelBullet* bullet = new FunnelBullet();
+					bullet->Initialize(funnelBullet_model_, start, vel);
+					funnelBullets_.push_back(bullet);
+				}
+			}
+		}
+
+		// 終了したら次のパターンへ（ここではまだBeam未実装なのでループ）
+		if (patternTimer_ > kFireEndTime) {
+			patternTimer_ = 0;
+			currentPattern_ = BossPattern::FunnelBeam; // 次のパターンへ
+		}
+
+	} break;
+
+	case BossPattern::FunnelBeam:
+		// ここに後で「照射ビーム攻撃」を実装する
+		// ひとまず何もせず、一定時間経ったらまたガトリングに戻すでもOK
+		if (patternTimer_ > 180) {
+			patternTimer_ = 0;
+			currentPattern_ = BossPattern::FunnelGatling;
+		}
+		break;
+	}
 
 	// （ここに「プレイヤーのマウス照準ショット」の処理が続く）
 	//   既存の Unproject → targetWorld → player_->FireToward(targetWorld)
