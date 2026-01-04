@@ -1,22 +1,25 @@
 #pragma once
-#include "Funnel.h"
-#include "FunnelBullet.h"
+#include "SceneManager.h"
 #include "KamataEngine.h"
 #include "Player.h"
 #include "Enemy.h"
+#include "Funnel.h"
+#include "FunnelBullet.h"
+#include "Skydome.h"
 #include <list>
-#include <memory>
 #include <vector>
+#include <memory>
 
 using namespace KamataEngine;
 
 // ゲームシーン
-class GameScene {
+class GameScene : public IScene {
 public:
-	void Initialize();
-	void Update();
-	void Draw();
-	void Delete();
+	void Initialize() override;
+	void Update() override;
+	void Draw() override;
+	void Finalize() override; 
+
 
 private:
 	// プレイヤー
@@ -30,6 +33,9 @@ private:
 
 	// カメラ
 	Camera camera_;
+
+	// スカイドーム
+	Skydome* skydome_ = nullptr;
 
 	// ファンネル本体
 	std::vector<Funnel*> funnels_;

@@ -100,9 +100,8 @@ void Player::Update() {
 
 void Player::Draw() {
 
-	// プレイヤーモデル描画
-	model_->Draw(worldTransform_, *camera_);
-
+	
+	// モデル or カメラが無ければ何もしない
 	if (model_ == nullptr || camera_ == nullptr) {
 		return;
 	}
@@ -132,6 +131,8 @@ void Player::Draw() {
 		// 通常
 		model_->Draw(worldTransform_, *camera_);
 	}
+	// プレイヤーモデル描画
+	model_->Draw(worldTransform_, *camera_);
 }
 
 void Player::Attack() {

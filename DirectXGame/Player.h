@@ -26,13 +26,11 @@ public:
 
 	/// プレイヤーのワールド座標（中心）取得
 	Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
-
 	// 当たり判定半径
 	float GetCollisionRadius() const { return collisionRadius_; }
 
 	//無敵状態か？
 	bool IsInvincible() const { return invincibleTimer_ > 0; }
-
 	//生きてるか？
 	bool IsDead() const { return hp_ <= 0; }
 

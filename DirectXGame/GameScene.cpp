@@ -28,6 +28,10 @@ void GameScene::Initialize() {
 	camera_.translation_ = {0.0f, 0.0f, -10.0f};
 	camera_.UpdateMatrix();
 
+	// スカイドーム初期化
+	skydome_ = new Skydome();
+	skydome_->Initialize(&camera_);
+
 	// デバッグカメラ
 	debugCamera_ = new DebugCamera(1280, 720);
 
@@ -58,6 +62,9 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
+
+	// スカイドーム更新
+	skydome_->Update();
 
 #ifdef _DEBUG
 	// デバッグカメラ切り替えなど…
@@ -316,6 +323,18 @@ void GameScene::Update() {
 			}
 		}
 	}
+
+	// === ボス撃破チェック ===
+	if (enemy_ && enemy_->IsDead()) {
+		SceneManager::GetInstance()->ChangeScene(SceneName::CLEAR);
+		return; // このフレームの残り処理は要らないので早期リターンでもOK
+	}
+
+	// === プレイヤー死亡チェック ===
+	if (player_->IsDead()) {
+		SceneManager::GetInstance()->ChangeScene(SceneName::GAMEOVER);
+		return;
+	}
 }
 
 
@@ -324,6 +343,9 @@ void GameScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
 	Model::PreDraw(dxCommon->GetCommandList());
+
+	// スカイドーム描画
+	skydome_->Draw();
 
 	// プレイヤー描画
 	player_->Draw();
@@ -347,7 +369,7 @@ void GameScene::Draw() {
 }
 
 
-void GameScene::Delete() {
+void GameScene::Finalize() {
 
 	delete player_;
 	delete player_model_;
@@ -370,6 +392,8 @@ void GameScene::Delete() {
 
 	delete funnel_model_;
 	delete funnelBullet_model_;
+
+	delete skydome_;
 
 	delete debugCamera_;
 }

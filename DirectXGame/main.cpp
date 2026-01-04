@@ -1,5 +1,6 @@
 #include "GameScene.h"
 #include "KamataEngine.h"
+#include "SceneManager.h"
 #include <Windows.h>
 
 // これを書くことでKamataEmgine::と書かずに済む
@@ -13,11 +14,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// DirectXCommonインスタンスの取得
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
-	// ゲームシーンのインスタンス生成
-	GameScene* gameScene = new GameScene();
-
-	// ゲームシーンの初期化
-	gameScene->Initialize();
+	SceneManager* sceneManager = SceneManager::GetInstance();
+	sceneManager->ChangeScene(SceneName::TITLE); // 最初はタイトルから
 
 	// メインループ
 	while (true) {
@@ -30,10 +28,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		dxCommon->PreDraw();
 
 		// ゲームシーンの更新
-		gameScene->Update();
+		sceneManager->Update();
 
 		// ゲームシーンの描画
-		gameScene->Draw();
+		sceneManager->Draw();
 
 		// ここに描画処理を記述する
 
@@ -42,8 +40,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	}
 
 	// 解放処理
-	gameScene->Delete();
-	delete gameScene;
+	sceneManager->Finalize();
+	
 
 	// エンジンの終了処理
 	KamataEngine::Finalize();
