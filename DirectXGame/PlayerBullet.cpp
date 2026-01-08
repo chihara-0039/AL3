@@ -3,13 +3,15 @@
 void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vector3& velocity, int32_t damage) {
 
 	// NULLポインタチェック
-	assert(model);
+	
 
 	// モデル
 	model_ = model;
 
 	// テクスチャ読み込み
-	textureHandle_ = TextureManager::Load("uvChecker.png");
+	static uint32_t sTex = TextureManager::Load("PlayerBeam.png");
+	textureHandle_ = sTex;
+
 
 	// ワールド変換の初期化
 	worldTransform_.Initialize();

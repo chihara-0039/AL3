@@ -9,24 +9,39 @@ bool IsSpacePressed() { return (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0; }
 
 void GameOverScene::Initialize() {
 	// ゲームオーバー演出の初期化など
+	camera_.Initialize();
+	camera_.translation_ = {0.0f, 0.0f, -10.0f};
+	camera_.UpdateMatrix();
+
+	skydome_ = new Skydome();
+	skydome_->Initialize(&camera_);
+	skydome_->SetRadius(200.0f);
 }
 
 void GameOverScene::Update() {
 	// スペースでタイトルに戻る
+	camera_.UpdateMatrix();
+	if (skydome_) {
+		skydome_->Update();
+	}
+
 	if (IsSpacePressed()) {
 		SceneManager::GetInstance()->ChangeScene(SceneName::TITLE);
 	}
 }
 
-void GameOverScene::Draw() {
-	//DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-	//dxCommon->PreDraw();
-
-	// 「GAME OVER」表示など
-
-	//dxCommon->PostDraw();
+void GameOverScene::Draw3D() {
+	if (skydome_) {
+		skydome_->Draw();
+	}
 }
 
 void GameOverScene::Finalize() {
 	// リソース解放
+	delete skydome_;
+	skydome_ = nullptr;
+}
+
+void GameOverScene::Draw2D() {
+	// 2D表示（GAME OVER画像など）を入れるならここ
 }

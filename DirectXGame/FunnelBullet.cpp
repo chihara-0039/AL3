@@ -7,7 +7,8 @@ void FunnelBullet::Initialize(Model* model, const Vector3& position, const Vecto
 	model_ = model;
 
 	// テクスチャは適当なものを流用
-	textureHandle_ = TextureManager::Load("uvChecker.png");
+	static uint32_t sTex = TextureManager::Load("FunnelBullet.png");
+	textureHandle_ = sTex;
 
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;

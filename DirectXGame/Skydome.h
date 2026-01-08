@@ -14,8 +14,15 @@ public:
 	// 描画（3D描画中に呼ぶだけ）
 	void Draw();
 
+	// 明示的に破棄したい時用（Scene::Finalize で呼べる）
+	void Finalize();
+
 	// 大きさ調整したくなったとき用（任意）
 	void SetRadius(float radius);
+
+	Skydome() = default;
+	~Skydome();
+	
 
 private:
 	WorldTransform worldTransform_;

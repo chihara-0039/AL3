@@ -8,7 +8,8 @@ using namespace KamataEngine;
 class Player {
 public:
 	/// 初期化
-	void Initialize(Model* model, Camera* camera, const Vector3& position);
+	void Initialize(Model* model, Model* bulletModel, Camera* camera, const Vector3& position);
+
 
 	/// 更新
 	void Update();
@@ -78,4 +79,6 @@ private:
 
 	//プレイヤーの当たり判定の半径
 	float collisionRadius_ = 1.0f;
+
+	Model* bulletModel_ = nullptr;
 };

@@ -1,34 +1,66 @@
 #include "TitleScene.h"
-#include "GameScene.h"
 #include "KamataEngine.h"
+#include <Windows.h>
 
 using namespace KamataEngine;
 
 namespace {
-bool IsSpacePressed() { return (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0; }
+bool IsSpaceDown() { return (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0; }
 } // namespace
 
 void TitleScene::Initialize() {
-	// 必要ならタイトル用のスプライトやBGM初期化
+	camera_.Initialize();
+	camera_.translation_ = {0.0f, 0.0f, -10.0f};
+	camera_.UpdateMatrix();
+
+	// 天球
+	skydome_ = new Skydome();
+	skydome_->Initialize(&camera_);
+	skydome_->SetRadius(200.0f);
+
+	// タイトルモデル（Resources/Title/Title.obj を想定）
+	titleModel_ = Model::CreateFromOBJ("Title");
+
+	titleWT_.Initialize();
+	titleWT_.translation_ = {0.0f, 0.0f, 0.0f};
+	titleWT_.scale_ = {1.0f, 1.0f, 1.0f};
+	titleWT_.rotation_ = {0.0f, 0.0f, 0.0f}; // ★タイトルは回さない
+	WorldTransformUpdate(titleWT_);
 }
 
 void TitleScene::Update() {
-	// スペース押したらゲーム開始
-	if (IsSpacePressed()) {
+	camera_.UpdateMatrix();
+
+	if (skydome_) {
+		skydome_->Update();
+	}
+
+	// ★回転処理は削除（タイトルは回らない）
+	// titleWT_.rotation_.y += 0.01f;
+	// WorldTransformUpdate(titleWT_);
+
+	if (IsSpaceDown()) {
 		SceneManager::GetInstance()->ChangeScene(SceneName::GAME);
+	}
+
+	titleWT_.rotation_ = {0, 0, 0};
+	WorldTransformUpdate(titleWT_);
+}
+
+void TitleScene::Draw3D() {
+	// ※PreDraw/PostDraw/Model::PreDraw/PostDraw は SceneManager 側でまとめて実行する
+	if (skydome_) {
+		skydome_->Draw();
+	}
+	if (titleModel_) {
+		titleModel_->Draw(titleWT_, camera_);
 	}
 }
 
-void TitleScene::Draw() {
-
-	//DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-
-	// ここにタイトル表示（ImGuiやSpriteなど）
-	// 今は何も描かなくてもOK
-
-	//dxCommon->PostDraw();
-}
-
 void TitleScene::Finalize() {
-	// タイトル用のリソース解放があればここで
+	delete skydome_;
+	skydome_ = nullptr;
+
+	delete titleModel_;
+	titleModel_ = nullptr;
 }

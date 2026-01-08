@@ -14,14 +14,17 @@ inline bool LeftDown() { return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0; }
 void GameScene::Initialize() {
 
 	// モデルのロード
-	player_model_ = Model::CreateFromOBJ("player");
+	player_model_ = Model::CreateFromOBJ("player1");
+	// プレイヤー弾モデルのロード
+	playerBullet_model_ = Model::CreateFromOBJ("PlayerBullet");
 
 	// 敵モデルのロード
-	enemy_model_ = Model::CreateFromOBJ("player");
+	enemy_model_ = Model::CreateFromOBJ("Boss");
 
-	// ファンネル本体のモデル（なければ player を流用でOK）
-	funnel_model_ = Model::CreateFromOBJ("funnel");       // 無ければ "player"
-	funnelBullet_model_ = Model::CreateFromOBJ("funnel"); // 無ければ "player"
+	// ファンネル本体のモデル
+	funnel_model_ = Model::CreateFromOBJ("funnel");
+	// ファンネル弾モデルのロード
+	funnelBullet_model_ = KamataEngine::Model::CreateFromOBJ("funnel");
 
 	// カメラ初期化
 	camera_.Initialize();
@@ -31,18 +34,18 @@ void GameScene::Initialize() {
 	// スカイドーム初期化
 	skydome_ = new Skydome();
 	skydome_->Initialize(&camera_);
+	skydome_->SetRadius(500.0f);
 
 	// デバッグカメラ
 	debugCamera_ = new DebugCamera(1280, 720);
 
 	// プレイヤー初期化
 	player_ = new Player();
-	player_->Initialize(player_model_, &camera_, {0.0f, 0.0f, 0.0f});
+	player_->Initialize(player_model_, playerBullet_model_, &camera_, {0.0f, 0.0f, 0.0f});
 
-	 // ★ 敵初期化（画面奥に1体）
+	// ★ 敵初期化（画面奥に1体）
 	enemy_ = new Enemy();
 	enemy_->Initialize(enemy_model_, &camera_, {0.0f, 0.0f, 30.0f});
-
 
 	// ファンネルの回転中心（画面奥）
 	Vector3 funnelCenter = {0.0f, 0.0f, 0.0f};
@@ -63,22 +66,35 @@ void GameScene::Initialize() {
 
 void GameScene::Update() {
 
-	// スカイドーム更新
-	skydome_->Update();
-
 #ifdef _DEBUG
 	// デバッグカメラ切り替えなど…
 #endif
 
+	// === レール前進カメラ ===
+	// const float kScrollSpeed = 0.2f; // お好みで
+	// camera_.translation_.z += kScrollSpeed;
+	// camera_.UpdateMatrix();
+
+	// スカイドーム
+	skydome_->Update();
+
 	if (isDebugCameraActive_) {
 		debugCamera_->Update();
-		camera_.matView = debugCamera_->GetCamera().matView;
-		camera_.matProjection = debugCamera_->GetCamera().matProjection;
+
+		const Camera& dbg = debugCamera_->GetCamera();
+		camera_.matView = dbg.matView;
+		camera_.matProjection = dbg.matProjection;
+
+		// matView からカメラ位置を復元（Skydome が translation_ を使うため）
+		Matrix4x4 invView = Inverse(camera_.matView);
+		camera_.translation_ = {invView.m[3][0], invView.m[3][1], invView.m[3][2]};
+
 		camera_.TransferMatrix();
 	} else {
+		// camera_.translation_.z += kScrollSpeed;
 		camera_.UpdateMatrix();
 	}
-	
+
 	// プレイヤー更新
 	player_->Update();
 
@@ -93,16 +109,15 @@ void GameScene::Update() {
 		funnel->Update(funnelCenter);
 	}
 
-	// ★ ここでファンネル弾の更新を入れる
+	// ここでファンネル弾の更新を入れる
 	for (FunnelBullet* bullet : funnelBullets_) {
 		bullet->Update();
 	}
 
-	// ★ プレイヤーとの当たり判定
+	// プレイヤーとの当たり判定
 	Vector3 playerPos = player_->GetWorldPosition();
 	float playerR = player_->GetCollisionRadius();
 	const int kPlayerHitDamage = 1;
-
 
 	for (FunnelBullet* bullet : funnelBullets_) {
 
@@ -124,12 +139,6 @@ void GameScene::Update() {
 		if (dist2 <= r * r) {
 			// 被弾
 			player_->OnHit(kPlayerHitDamage);
-			// 弾は消す（OnHitが無ければ isDead_ を直接 true にする）
-			// bullet->OnHit();  // ないなら…
-			// bullet->SetDead(); みたいなのを作る
-
-			// とりあえず寿命切れ扱いにする例：
-			// （FunnelBullet に Kill() を追加した方が綺麗）
 		}
 	}
 
@@ -199,7 +208,7 @@ void GameScene::Update() {
 	//   既存の Unproject → targetWorld → player_->FireToward(targetWorld)
 	//   のブロックはそのまま残してOK
 
-	 //========================================
+	//========================================
 	// プレイヤーのマウス照準 5連バースト処理
 	//========================================
 
@@ -337,44 +346,42 @@ void GameScene::Update() {
 	}
 }
 
-
-void GameScene::Draw() {
-
-	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-
-	Model::PreDraw(dxCommon->GetCommandList());
-
+void GameScene::Draw3D() {
 	// スカイドーム描画
-	skydome_->Draw();
+	if (skydome_) {
+		skydome_->Draw();
+	}
 
-	// プレイヤー描画
+	// プレイヤー
 	player_->Draw();
 
-	// 敵描画（★ nullptr チェックを追加）
+	// 敵
 	if (enemy_) {
 		enemy_->Draw();
 	}
 
-	// ファンネル描画
-	for (Funnel* funnel : funnels_) {
-		funnel->Draw();
+	// ファンネル
+	for (Funnel* f : funnels_) {
+		f->Draw();
 	}
 
-	// ファンネル弾描画
-	for (FunnelBullet* bullet : funnelBullets_) {
-		bullet->Draw(camera_);
+	// ファンネル弾
+	for (FunnelBullet* b : funnelBullets_) {
+		b->Draw(camera_);
 	}
-
-	Model::PostDraw();
 }
-
 
 void GameScene::Finalize() {
 
+	// プレイヤー解放
 	delete player_;
-	delete player_model_;
+	player_ = nullptr;
 
-	 // 敵解放
+	// プレイヤーモデル解放
+	delete player_model_;
+	player_model_ = nullptr;
+
+	// 敵解放
 	delete enemy_;
 	delete enemy_model_;
 	enemy_ = nullptr;
@@ -390,10 +397,19 @@ void GameScene::Finalize() {
 	}
 	funnelBullets_.clear();
 
+	// ファンネルモデル解放
 	delete funnel_model_;
+	funnel_model_ = nullptr;
+
+	// ファンネル弾モデル解放
 	delete funnelBullet_model_;
+	funnelBullet_model_ = nullptr;
 
+	// スカイドーム解放
 	delete skydome_;
+	skydome_ = nullptr;
 
+	// デバッグカメラ解放
 	delete debugCamera_;
+	debugCamera_ = nullptr;
 }

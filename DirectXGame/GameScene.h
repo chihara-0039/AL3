@@ -1,14 +1,14 @@
 #pragma once
-#include "SceneManager.h"
-#include "KamataEngine.h"
-#include "Player.h"
 #include "Enemy.h"
 #include "Funnel.h"
 #include "FunnelBullet.h"
+#include "KamataEngine.h"
+#include "Player.h"
+#include "SceneManager.h"
 #include "Skydome.h"
 #include <list>
-#include <vector>
 #include <memory>
+#include <vector>
 
 using namespace KamataEngine;
 
@@ -17,9 +17,8 @@ class GameScene : public IScene {
 public:
 	void Initialize() override;
 	void Update() override;
-	void Draw() override;
-	void Finalize() override; 
-
+	void Draw3D() override;
+	void Finalize() override;
 
 private:
 	// プレイヤー
@@ -27,7 +26,9 @@ private:
 	// プレイヤー用モデル
 	Model* player_model_ = nullptr;
 
-	 // 敵（ボス）
+	KamataEngine::Model* playerBullet_model_ = nullptr;
+
+	// 敵（ボス）
 	Enemy* enemy_ = nullptr;
 	Model* enemy_model_ = nullptr;
 
@@ -43,7 +44,8 @@ private:
 
 	// ファンネル弾
 	std::list<FunnelBullet*> funnelBullets_;
-	Model* funnelBullet_model_ = nullptr;
+	KamataEngine::Model* funnelBullet_model_ = nullptr;
+
 	int funnelAttackTimer_ = 0;
 
 	// テクスチャハンドル
@@ -55,10 +57,7 @@ private:
 	// デバッグカメラの有効フラグ
 	bool isDebugCameraActive_ = false;
 
-	enum class BossPattern { 
-		FunnelGatling,
-		FunnelBeam 
-	};
+	enum class BossPattern { FunnelGatling, FunnelBeam };
 
 	BossPattern currentPattern_ = BossPattern::FunnelGatling;
 	int patternTimer_ = 0;

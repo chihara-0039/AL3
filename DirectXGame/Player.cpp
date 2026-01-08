@@ -3,10 +3,11 @@
 #include <cassert>
 #include <cmath>
 
-void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
-
+void Player::Initialize(Model* model, Model* bulletModel, Camera* camera, const Vector3& position) {
+	assert(model);
 	assert(model);
 	model_ = model;
+	bulletModel_ = bulletModel;
 	camera_ = camera;
 
 	worldTransform_.Initialize();
@@ -151,7 +152,7 @@ void Player::Attack() {
 
 		// 弾を生成し、初期化
 		PlayerBullet* newBullet = new PlayerBullet();
-		newBullet->Initialize(model_, worldTransform_.translation_, velocity, kBulletDamage);
+		newBullet->Initialize(bulletModel_, worldTransform_.translation_, velocity, kBulletDamage);
 
 		// 弾を登録する
 		bullets_.push_back(newBullet);
@@ -195,7 +196,7 @@ void Player::FireToward(const Vector3& targetWorld) {
 	PlayerBullet* newBullet = new PlayerBullet();
 
 	// 弾の初期位置を自機の位置に設定
-	newBullet->Initialize(model_, worldTransform_.translation_, velocity, kBulletDamage);
+	newBullet->Initialize(bulletModel_, worldTransform_.translation_, velocity, kBulletDamage);
 
 	// 弾を登録する
 	bullets_.push_back(newBullet);
