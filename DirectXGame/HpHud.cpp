@@ -2,99 +2,91 @@
 #include "Enemy.h"
 #include "Player.h"
 
-#include <Windows.h>
-#include <cstdio>
-#include <imgui.h>
+using namespace KamataEngine;
+
+void HpHud::Initialize() {
+	// 白い画像を読み込む
+	textureHandle_ = TextureManager::Load("white1x1.png");
+
+	// === プレイヤー用バー設定 (左下) ===
+	Vector2 playerPos = {50.0f, 600.0f}; // 画面左下あたり
+	Vector2 playerSize = {kPlayerBarWidth_, 30.0f};
+
+	// 背景（黒）
+	playerBarBG_ = Sprite::Create(textureHandle_, playerPos);
+	playerBarBG_->SetSize(playerSize);
+	playerBarBG_->SetColor({0.0f, 0.0f, 0.0f, 1.0f}); // 黒
+
+	// 前景（緑）
+	playerBarFG_ = Sprite::Create(textureHandle_, playerPos);
+	playerBarFG_->SetSize(playerSize);
+	playerBarFG_->SetColor({0.0f, 1.0f, 0.0f, 1.0f}); // 緑
+
+	// === 敵用バー設定 (上中央) ===
+	// 画面幅が1280と仮定して中央配置
+	Vector2 enemyPos = {(1280.0f - kEnemyBarWidth_) / 2.0f, 20.0f};
+	Vector2 enemySize = {kEnemyBarWidth_, 20.0f};
+
+	// 背景（黒・少し透明）
+	enemyBarBG_ = Sprite::Create(textureHandle_, enemyPos);
+	enemyBarBG_->SetSize(enemySize);
+	enemyBarBG_->SetColor({0.0f, 0.0f, 0.0f, 0.5f});
+
+	// 前景（赤）
+	enemyBarFG_ = Sprite::Create(textureHandle_, enemyPos);
+	enemyBarFG_->SetSize(enemySize);
+	enemyBarFG_->SetColor({1.0f, 0.0f, 0.0f, 1.0f});
+}
 
 void HpHud::Draw(const Player* player, const Enemy* enemy) {
+	// スプライト描画前処理（GameSceneのDraw2Dで呼ばれている前提なら不要だが念のため）
+	// ※親側でPreDrawしているならここは無くても動きます
 
-	// ===== ImGuiが回ってない（コンテキスト無し）なら描けない =====
-	if (ImGui::GetCurrentContext() == nullptr) {
-		static bool warned = false;
-		if (!warned && config_.warnIfNoImGui) {
-			warned = true;
-			OutputDebugStringA("[HpHud] ImGui context is null. "
-			                   "HP HUD will not be visible unless ImGui::NewFrame/Render is running in the engine loop.\n");
+	// --- プレイヤーHP更新 ---
+	if (player && playerBarFG_) {
+		float ratio = 0.0f;
+		float maxHp = (float)Player::kMaxHP;
+		if (maxHp > 0) {
+			ratio = (float)player->GetHP() / maxHp;
 		}
-		return;
+		// 0～1の範囲に収める
+		if (ratio < 0.0f)
+			ratio = 0.0f;
+		if (ratio > 1.0f)
+			ratio = 1.0f;
+
+		// 幅を変更
+		playerBarFG_->SetSize({kPlayerBarWidth_ * ratio, 30.0f});
+
+		// 描画
+		playerBarBG_->Draw();
+		playerBarFG_->Draw();
 	}
 
-	if (!player || !enemy) {
-		return;
+	// --- 敵HP更新 ---
+	if (enemy && enemyBarFG_) {
+		float ratio = 0.0f;
+		float maxHp = (float)Enemy::kMaxHP;
+		if (maxHp > 0) {
+			ratio = (float)enemy->GetHP() / maxHp;
+		}
+		if (ratio < 0.0f)
+			ratio = 0.0f;
+		if (ratio > 1.0f)
+			ratio = 1.0f;
+
+		// 幅を変更
+		enemyBarFG_->SetSize({kEnemyBarWidth_ * ratio, 20.0f});
+
+		// 描画
+		enemyBarBG_->Draw();
+		enemyBarFG_->Draw();
 	}
+}
 
-	// 値取得
-	const int pHP = player->GetHP();
-	const int pMax = Player::kMaxHP;
-
-	const int eHP = enemy->GetHP();
-	const int eMax = Enemy::kMaxHP;
-
-	// 画面情報
-	ImGuiViewport* vp = ImGui::GetMainViewport();
-	const ImVec2 pos = vp->WorkPos;
-	const ImVec2 size = vp->WorkSize;
-
-	ImDrawList* dl = ImGui::GetForegroundDrawList();
-
-	// ===== 敵HP：上中央 =====
-	{
-		char text[64];
-		sprintf_s(text, "ENEMY HP  %d / %d", eHP, eMax);
-
-		ImVec2 ts = ImGui::CalcTextSize(text);
-		ImVec2 tp(pos.x + size.x * 0.5f - ts.x * 0.5f, pos.y + config_.enemyTopPadding);
-		dl->AddText(tp, IM_COL32(255, 255, 255, 255), text);
-
-		const float barW = config_.enemyBarW;
-		const float barH = config_.enemyBarH;
-
-		ImVec2 barMin(pos.x + size.x * 0.5f - barW * 0.5f, tp.y + ts.y + 6.0f);
-		ImVec2 barMax(barMin.x + barW, barMin.y + barH);
-
-		float t = (eMax > 0) ? (float)eHP / (float)eMax : 0.0f;
-		if (t < 0.0f)
-			t = 0.0f;
-		if (t > 1.0f)
-			t = 1.0f;
-
-		// 背景＆枠
-		dl->AddRectFilled(barMin, barMax, IM_COL32(0, 0, 0, 160));
-		dl->AddRect(barMin, barMax, IM_COL32(255, 255, 255, 255));
-
-		// 充填
-		ImVec2 fillMax(barMin.x + barW * t, barMax.y);
-		dl->AddRectFilled(barMin, fillMax, IM_COL32(255, 80, 80, 220));
-	}
-
-	// ===== プレイヤーHP：左下 =====
-	{
-		char text[64];
-		sprintf_s(text, "PLAYER HP  %d / %d", pHP, pMax);
-
-		ImVec2 ts = ImGui::CalcTextSize(text);
-
-		ImVec2 tp(pos.x + config_.playerLeftPadding, pos.y + size.y - ts.y - config_.playerBottomPadding - 20.0f);
-		dl->AddText(tp, IM_COL32(255, 255, 255, 255), text);
-
-		const float barW = config_.playerBarW;
-		const float barH = config_.playerBarH;
-
-		ImVec2 barMin(pos.x + config_.playerLeftPadding, tp.y + ts.y + 6.0f);
-		ImVec2 barMax(barMin.x + barW, barMin.y + barH);
-
-		float t = (pMax > 0) ? (float)pHP / (float)pMax : 0.0f;
-		if (t < 0.0f)
-			t = 0.0f;
-		if (t > 1.0f)
-			t = 1.0f;
-
-		// 背景＆枠
-		dl->AddRectFilled(barMin, barMax, IM_COL32(0, 0, 0, 160));
-		dl->AddRect(barMin, barMax, IM_COL32(255, 255, 255, 255));
-
-		// 充填
-		ImVec2 fillMax(barMin.x + barW * t, barMax.y);
-		dl->AddRectFilled(barMin, fillMax, IM_COL32(120, 220, 120, 220));
-	}
+void HpHud::Finalize() {
+	delete playerBarBG_;
+	delete playerBarFG_;
+	delete enemyBarBG_;
+	delete enemyBarFG_;
 }

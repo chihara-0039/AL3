@@ -48,4 +48,7 @@ private:
 	static const int kInvincibleDuration = 60;
 
 	float collisionRadius_ = 1.0f;
+
+	// 自分の座標を教える関数
+	KamataEngine::Vector3 GetPosition() const { return worldTransform_.translation_; }
 };

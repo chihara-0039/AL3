@@ -18,13 +18,14 @@ void ClearScene::Initialize() {
 	skydome_->SetRadius(200.0f);
 
 	// クリア画像の読み込みobj
+	// ※ Resources/clearFont/clearFont.obj があるか確認してください
 	clearModel_ = Model::CreateFromOBJ("clearFont");
 
 	clearWT_.Initialize();
 	clearWT_.translation_ = {0.0f, 0.0f, 0.0f};
 	clearWT_.scale_ = {1.0f, 1.0f, 1.0f};
-	clearWT_.rotation_ = {0.0f, 0.0f, 0.0f}; // ★タイトルは回さない
-	WorldTransformUpdate(clearWT_);
+	clearWT_.rotation_ = {0.0f, 0.0f, 0.0f};
+	
 }
 
 void ClearScene::Update() {
@@ -39,13 +40,12 @@ void ClearScene::Update() {
 }
 
 void ClearScene::Draw3D() {
-	
-	skydome_->Draw(); // ★Model::PreDraw〜PostDrawの間で呼ばれる前提
+	skydome_->Draw();
+	// Draw内で自動的に行列計算されるか、初期値が使われます
 	clearModel_->Draw(clearWT_, camera_);
 }
 
 void ClearScene::Finalize() {
-	// リソース解放
 	delete skydome_;
 	skydome_ = nullptr;
 
@@ -53,6 +53,4 @@ void ClearScene::Finalize() {
 	clearModel_ = nullptr;
 }
 
-void ClearScene::Draw2D() {
-	// 2D描画（スプライトなど）が必要なければ空っぽでOK
-}
+void ClearScene::Draw2D() {}

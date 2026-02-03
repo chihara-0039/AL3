@@ -21,6 +21,13 @@ void TitleScene::Initialize() {
 	// タイトルモデル（Resources/Title/Title.obj を想定）
 	titleModel_ = Model::CreateFromOBJ("Title");
 
+	// BGM
+	bgmHandle_ = Audio::GetInstance()->LoadWave("Audio/maou_bgm_8bit23.mp3");
+
+	// PlayWave(ハンドル, ループするかどうか, 音量)
+	// trueにするとループ再生されます
+	voiceHandle_ = Audio::GetInstance()->PlayWave(bgmHandle_, true, 0.5f);
+
 	titleWT_.Initialize();
 	titleWT_.translation_ = {0.0f, 0.0f, 0.0f};
 	titleWT_.scale_ = {1.0f, 1.0f, 1.0f};
@@ -35,10 +42,6 @@ void TitleScene::Update() {
 		skydome_->Update();
 	}
 
-	// ★回転処理は削除（タイトルは回らない）
-	// titleWT_.rotation_.y += 0.01f;
-	// WorldTransformUpdate(titleWT_);
-
 	if (IsSpaceDown()) {
 		SceneManager::GetInstance()->ChangeScene(SceneName::GAME);
 	}
@@ -48,7 +51,6 @@ void TitleScene::Update() {
 }
 
 void TitleScene::Draw3D() {
-	// ※PreDraw/PostDraw/Model::PreDraw/PostDraw は SceneManager 側でまとめて実行する
 	
 	skydome_->Draw();
 	
@@ -62,4 +64,7 @@ void TitleScene::Finalize() {
 
 	delete titleModel_;
 	titleModel_ = nullptr;
+
+	// これを忘れると次のシーンでも鳴りっぱなしになる！
+	Audio::GetInstance()->StopWave(voiceHandle_);
 }

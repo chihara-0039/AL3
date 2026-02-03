@@ -16,4 +16,8 @@ private:
 	Skydome* skydome_ = nullptr;
 	KamataEngine::Model* titleModel_ = nullptr;
 	KamataEngine::WorldTransform titleWT_;
+
+	//BGM用ハンドル
+	uint32_t bgmHandle_ = 0;   // 音データ読み込み用
+	uint32_t voiceHandle_ = 0; // 再生管理用（止めるため）
 };

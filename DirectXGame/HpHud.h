@@ -1,34 +1,32 @@
 #pragma once
-#include <cstdint>
+#include "KamataEngine.h"
 
+// 前方宣言
 class Player;
 class Enemy;
 
-struct HpHudConfig {
-	// 敵HP（上）
-	float enemyBarW = 360.0f;
-	float enemyBarH = 16.0f;
-	float enemyTopPadding = 10.0f;
-
-	// プレイヤーHP（左下）
-	float playerBarW = 240.0f;
-	float playerBarH = 14.0f;
-	float playerLeftPadding = 10.0f;
-	float playerBottomPadding = 10.0f;
-
-	// デバッグ：ImGuiが無い時にログを出すか
-	bool warnIfNoImGui = true;
-};
-
 class HpHud {
 public:
-	HpHud() = default;
+	// 初期化（画像を読み込み、スプライトを作る）
+	void Initialize();
 
-	// HP HUD 描画（ImGuiが回ってないなら表示されないが落ちない）
+	// 描画（HPを受け取ってバーの長さを変える）
 	void Draw(const Player* player, const Enemy* enemy);
 
-	HpHudConfig& GetConfig() { return config_; }
+	// 終了処理（スプライトのメモリ解放）
+	void Finalize();
 
 private:
-	HpHudConfig config_;
+	// 共通のテクスチャハンドル
+	uint32_t textureHandle_ = 0;
+
+	// --- プレイヤー用 ---
+	KamataEngine::Sprite* playerBarBG_ = nullptr; // 背景（黒）
+	KamataEngine::Sprite* playerBarFG_ = nullptr; // 前景（緑）
+	const float kPlayerBarWidth_ = 300.0f;        // プレイヤーバーの最大幅
+
+	// --- 敵用 ---
+	KamataEngine::Sprite* enemyBarBG_ = nullptr;
+	KamataEngine::Sprite* enemyBarFG_ = nullptr;
+	const float kEnemyBarWidth_ = 400.0f; // 敵バーの最大幅
 };

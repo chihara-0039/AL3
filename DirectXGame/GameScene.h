@@ -22,7 +22,7 @@ public:
 
 	// ★これが無いと GameScene.cpp の Draw() 定義で C2509 になる
 	void Draw() override;
-
+	void Draw2D() override;
 	void Draw3D() override;
 	void Finalize() override;
 
@@ -55,4 +55,12 @@ private:
 
 	// ★HUD
 	HpHud hpHud_;
+
+	// 操作説明画像用
+	uint32_t guideTextureHandle_ = 0;
+	KamataEngine::Sprite* guideSprite_ = nullptr;
+
+	//BGM用
+	uint32_t bgmHandle_ = 0;
+	uint32_t voiceHandle_ = 0;
 };

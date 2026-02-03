@@ -18,11 +18,18 @@ void GameOverScene::Initialize() {
 	skydome_->SetRadius(200.0f);
 
 	// ゲームオーバー画像の読み込みobj
+	// ※ Resources/GameOverFont/GameOverFont.obj があるか確認してください
 	gameOverModel_ = Model::CreateFromOBJ("GameOverFont");
+
+	// ★初期化処理を追加（TitleScene同様に行う）
+	gameOverWT_.Initialize();
+	gameOverWT_.translation_ = {0.0f, 0.0f, 0.0f};
+	gameOverWT_.scale_ = {1.0f, 1.0f, 1.0f};
+	gameOverWT_.rotation_ = {0.0f, 0.0f, 0.0f};
+	
 }
 
 void GameOverScene::Update() {
-	// スペースでタイトルに戻る
 	camera_.UpdateMatrix();
 	if (skydome_) {
 		skydome_->Update();
@@ -37,13 +44,10 @@ void GameOverScene::Draw3D() {
 	if (skydome_) {
 		skydome_->Draw();
 	}
-
-	// ゲームオーバーモデルの描画
 	gameOverModel_->Draw(gameOverWT_, camera_);
 }
 
 void GameOverScene::Finalize() {
-	// リソース解放
 	delete skydome_;
 	skydome_ = nullptr;
 
@@ -51,6 +55,4 @@ void GameOverScene::Finalize() {
 	gameOverModel_ = nullptr;
 }
 
-void GameOverScene::Draw2D() {
-	// 2D表示（GAME OVER画像など）を入れるならここ
-}
+void GameOverScene::Draw2D() {}

@@ -21,6 +21,12 @@ void GameScene::Initialize() {
 		}
 	};
 
+	// 操作説明画像の読み込み
+	//guideTextureHandle_ = TextureManager::Load("guide.png");
+
+	// スプライト生成（一旦座標は 0,0 で作る）
+	//guideSprite_ = Sprite::Create(guideTextureHandle_, {0, 0});
+
 	// モデルのロード
 	player_model_ = Model::CreateFromOBJ("player1");
 	// プレイヤー弾モデルのロード
@@ -34,6 +40,12 @@ void GameScene::Initialize() {
 	// ファンネル弾モデルのロード
 	funnelBullet_model_ = KamataEngine::Model::CreateFromOBJ("funnel");
 
+	//ゲーム用BGM読み込み
+	bgmHandle_ = Audio::GetInstance()->LoadWave("Audio/maou_bgm_8bit25.mp3");
+
+	// 再生 (ループON)
+	voiceHandle_ = Audio::GetInstance()->PlayWave(bgmHandle_, true, 0.5f);
+
 	// カメラ初期化
 	camera_.Initialize();
 	camera_.translation_ = {0.0f, 0.0f, -10.0f};
@@ -46,6 +58,25 @@ void GameScene::Initialize() {
 
 	// デバッグカメラ
 	debugCamera_ = new DebugCamera(1280, 720);
+
+	//// === 位置を右下に調整する計算 ===
+	//// 画面サイズ（1280 x 720 と仮定）
+	//float kWindowWidth = 1280.0f;
+	//float kWindowHeight = 720.0f;
+
+	//// 画像のサイズ（表示したい大きさに変えてね）
+	//float guideW = 300.0f; // 幅
+	//float guideH = 200.0f; // 高さ
+	//float padding = 20.0f; // 画面端からの隙間
+
+	// サイズを設定
+	//guideSprite_->SetSize({guideW, guideH});
+
+	// 右下の座標を計算
+	// X = 画面幅 - 画像幅 - 隙間
+	// Y = 画面高さ - 画像高さ - 隙間
+	//Vector2 pos = {kWindowWidth - guideW - padding, kWindowHeight - guideH - padding};
+	//guideSprite_->SetPosition(pos);
 
 	// プレイヤー初期化
 	player_ = new Player();
@@ -69,8 +100,14 @@ void GameScene::Initialize() {
 		funnels_.push_back(funnel);
 	}
 
+	
+
 	// 攻撃タイマー初期値
 	funnelAttackTimer_ = 60; // 1秒後に最初の攻撃
+
+	// HUD初期化
+	hpHud_.Initialize();
+
 }
 
 void GameScene::Update() {
@@ -368,6 +405,17 @@ void GameScene::Draw() {
 	hpHud_.Draw(player_, enemy_);
 }
 
+void GameScene::Draw2D() {
+	
+	//操作説明の描画
+	/*if (guideSprite_) {
+		guideSprite_->Draw();
+	}*/
+
+	// HPバーの描画
+	hpHud_.Draw(player_, enemy_);
+}
+
 
 void GameScene::Draw3D() {
 	// スカイドーム描画
@@ -395,6 +443,11 @@ void GameScene::Draw3D() {
 }
 
 void GameScene::Finalize() {
+
+	delete guideSprite_;
+
+	// ゲーム用BGM解放
+	Audio::GetInstance()->StopWave(voiceHandle_);
 
 	// プレイヤー解放
 	delete player_;
