@@ -39,7 +39,7 @@ void PlayerBullet::Update() {
 	WorldTransformUpdate(worldTransform_);
 	worldTransform_.TransferMatrix();
 
-	if (--dethTimer_ <= 0) {
+	if (--deathTimer_ <= 0) {
 		isDead_ = true;
 	}
 }

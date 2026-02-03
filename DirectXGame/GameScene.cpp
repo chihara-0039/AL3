@@ -13,6 +13,14 @@ inline bool LeftDown() { return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0; }
 
 void GameScene::Initialize() {
 
+	auto CheckModel = [](Model* m, const char* name) {
+		if (!m) {
+			char buf[256];
+			sprintf_s(buf, "[ModelLoad] FAILED: %s\n", name);
+			OutputDebugStringA(buf);
+		}
+	};
+
 	// モデルのロード
 	player_model_ = Model::CreateFromOBJ("player1");
 	// プレイヤー弾モデルのロード
@@ -45,10 +53,11 @@ void GameScene::Initialize() {
 
 	// ★ 敵初期化（画面奥に1体）
 	enemy_ = new Enemy();
-	enemy_->Initialize(enemy_model_, &camera_, {0.0f, 0.0f, 30.0f});
+	enemy_->Initialize(enemy_model_, funnelBullet_model_, &camera_, {0.0f, 5.0f, 30.0f});
 
 	// ファンネルの回転中心（画面奥）
 	Vector3 funnelCenter = {0.0f, 0.0f, 0.0f};
+
 
 	const int kFunnelCount = 3;
 	const float kFunnelRadius = 6.0f;
@@ -100,14 +109,22 @@ void GameScene::Update() {
 
 	// 敵更新
 	if (enemy_) {
-		enemy_->Update();
+		enemy_->Update(funnelBullets_);
 	}
 
 	// --------- ファンネル本体の更新 ----------
 	Vector3 funnelCenter = {0.0f, 0.0f, 30.0f};
+
+	if (enemy_) {
+		funnelCenter = enemy_->GetWorldPosition();
+		// 好みで少し上/後ろにずらす
+		// funnelCenter.y += 1.0f;
+	}
+
 	for (Funnel* funnel : funnels_) {
 		funnel->Update(funnelCenter);
 	}
+
 
 	// ここでファンネル弾の更新を入れる
 	for (FunnelBullet* bullet : funnelBullets_) {
@@ -345,6 +362,12 @@ void GameScene::Update() {
 		return;
 	}
 }
+
+void GameScene::Draw() {
+	Draw3D();
+	hpHud_.Draw(player_, enemy_);
+}
+
 
 void GameScene::Draw3D() {
 	// スカイドーム描画

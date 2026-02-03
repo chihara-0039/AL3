@@ -1,69 +1,65 @@
+// Enemy.h
+
 #pragma once
 #include "KamataEngine.h"
 #include "Math.h"
+#include <list>
+
+// 前方宣言
+class FunnelBullet;
 
 using namespace KamataEngine;
 
 class Enemy {
-
 public:
-	/// <summary>
-	/// 初期化
-	/// </summary>
-	/// <param name="model">モデル</param>
-	/// <param name="camera">カメラ</param>
-	/// <param name="position">初期座標</param>
-	void Initialize(Model* model, Camera* camera, const Vector3& position);
+	// 行動パターンの定義
+	enum class Behavior {
+		kRoot,   // 待機・基本姿勢
+		kAttack, // 攻撃
+		kMove,   // 移動
+	};
 
-	/// <summary>
-	/// 更新
-	/// </summary>
-	void Update();
+	int GetHP() const { return hp_; }
+	static constexpr int kMaxHP = 60;
 
-	/// <summary>
-	/// 描画
-	/// </summary>
+	// 初期化に弾モデル（bulletModel）を追加
+	void Initialize(Model* model, Model* bulletModel, Camera* camera, const Vector3& position);
+
+	// Updateで弾リストを受け取る形に変更
+	void Update(std::list<FunnelBullet*>& bullets);
+
+	Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
+
+
 	void Draw();
-
-	/// <summary>
-	/// 被弾処理
-	/// </summary>
-	/// <param name="damage">与ダメージ</param>
 	void OnHit(int damage);
-
-	/// <summary>
-	/// 死亡フラグ
-	/// </summary>
 	bool IsDead() const { return isDead_; }
-
-	/// <summary>
-	/// 当たり判定用のAABB取得
-	/// </summary>
 	AABB GetAABB() const;
 
 private:
-	// ワールド変換
+	// 敵の攻撃行動（内部関数）
+	void FireSpreadShot(std::list<FunnelBullet*>& bullets);
+
+private:
 	WorldTransform worldTransform_;
-
-	// モデル
 	Model* model_ = nullptr;
-
-	// カメラ
+	Model* bulletModel_ = nullptr; // 弾モデル
 	Camera* camera_ = nullptr;
 
-	// テクスチャハンドル（必要なら使う）
-	uint32_t textureHandle_ = 0u;
-
-	// HP（ここではボスHP 60）
-	int32_t hp_ = 60;
-
-	// デスフラグ
+	int hp_ = kMaxHP;
 	bool isDead_ = false;
 
-	// 被弾フラッシュ用
-	int32_t flashTimer_ = 0;
-	static const int32_t kFlashDurationFrame = 6; // 被弾後6フレームだけ赤に
+	int flashTimer_ = 0;
+	static const int kFlashDurationFrame = 6;
+	Vector3 halfSize_{2.0f, 2.0f, 2.0f};
+	Vector3 basePos_{};
 
-	// 当たり判定サイズ（適当に調整してOK）
-	Vector3 halfSize_ = {2.0f, 2.0f, 2.0f};
+
+	// 行動制御用
+	Behavior behavior_ = Behavior::kRoot;
+	Behavior prevBehavior_ = Behavior::kRoot;
+	int behaviorTimer_ = 0; // 行動の経過時間
+
+	// パラメータ
+	float kWalkSpeed = 0.1f;
 };

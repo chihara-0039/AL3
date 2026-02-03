@@ -49,12 +49,11 @@ void TitleScene::Update() {
 
 void TitleScene::Draw3D() {
 	// ※PreDraw/PostDraw/Model::PreDraw/PostDraw は SceneManager 側でまとめて実行する
-	if (skydome_) {
-		skydome_->Draw();
-	}
-	if (titleModel_) {
-		titleModel_->Draw(titleWT_, camera_);
-	}
+	
+	skydome_->Draw();
+	
+
+	titleModel_->Draw(titleWT_, camera_);
 }
 
 void TitleScene::Finalize() {

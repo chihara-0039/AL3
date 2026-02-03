@@ -28,7 +28,7 @@ void Skydome::Initialize(Camera* camera) {
 		WorldTransformUpdate(worldTransform_);
 	}
 
-	// Skydome::Initialize の最後あたりで一回
+	// celestial sphere::Initialize の最後あたりで一回
 	worldTransform_.translation_ = {0.0f, 0.0f, 20.0f};
 	WorldTransformUpdate(worldTransform_);
 }

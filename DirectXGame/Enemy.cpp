@@ -1,66 +1,132 @@
 #include "Enemy.h"
+#include "FunnelBullet.h" 
 #include <cassert>
+#include <cmath>
+#include <algorithm>
 
-void Enemy::Initialize(Model* model, Camera* camera, const Vector3& position) {
-
+void Enemy::Initialize(Model* model, Model* bulletModel, Camera* camera, const Vector3& position) {
 	assert(model);
+	assert(bulletModel);
 	assert(camera);
 
 	model_ = model;
+	bulletModel_ = bulletModel;
 	camera_ = camera;
 
 	worldTransform_.Initialize();
-
-	// 位置とサイズは調整してOK
 	worldTransform_.translation_ = position;
 	worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
+
+	// 基準位置を保存
+	basePos_ = position;
+
+
+	// 最初は待機状態から
+	behavior_ = Behavior::kRoot;
+	behaviorTimer_ = 0;
 
 	WorldTransformUpdate(worldTransform_);
 }
 
-void Enemy::Update() {
-
+void Enemy::Update(std::list<FunnelBullet*>& bullets) {
 	if (isDead_) {
 		return;
 	}
 
-	// 被弾フラッシュタイマー更新
+	// 被弾フラッシュ
 	if (flashTimer_ > 0) {
 		--flashTimer_;
 	}
 
-	// 必要ならここで移動処理など
-	// worldTransform_.translation_.z -= 0.0f;
+	// HPが半分以下なら発狂モード（動作倍速）
+	const int speedMultiplier = (hp_ < kMaxHP / 2) ? 2 : 1;
 
-	WorldTransformUpdate(worldTransform_);
-}
+	// 揺れパラメータ
+	const float freq = 0.05f;
+	const float idleAmpY = 0.6f;
+	const float moveAmpY = 0.8f;
 
+	// 行動タイマー進行
+	behaviorTimer_++;
 
-void Enemy::Draw() {
+	switch (behavior_) {
+	case Behavior::kRoot: {
+		// 基準位置 + sin（漂流しない）
+		worldTransform_.translation_.y = basePos_.y + std::sin(behaviorTimer_ * freq) * idleAmpY;
+		worldTransform_.translation_.x = basePos_.x; // Root中はX固定（好みで）
 
-	 // ★ 死亡済み or モデル/カメラが無いなら描画しない
-	if (isDead_ || model_ == nullptr || camera_ == nullptr) {
-		return;
-	}
-
-	// ★ フラッシュ中は「描画しない」＝点滅して見える
-	if (flashTimer_ > 0) {
-		// 何もしない → 一瞬消える
-		// flashTimer_ が残っている間は点滅させる
-		// 偶数フレームのときだけ描画する例
-		if ((flashTimer_ % 2) == 0) {
-			model_->Draw(worldTransform_, *camera_);
+		if (behaviorTimer_ >= 60 / speedMultiplier) {
+			// 次状態の基準を「今の位置」に更新（ワープ防止）
+			basePos_ = worldTransform_.translation_;
+			behavior_ = Behavior::kAttack;
+			behaviorTimer_ = 0;
 		}
-		return;
+	} break;
+
+	case Behavior::kAttack: {
+		FireSpreadShot(bullets);
+
+		// Move開始時の基準を「今の位置」にする
+		basePos_ = worldTransform_.translation_;
+		behavior_ = Behavior::kMove;
+		behaviorTimer_ = 0;
+	} break;
+
+	case Behavior::kMove: {
+		// 「今いる位置(basePos_) を中心に」8の字っぽく動く（代入式で統一）
+		worldTransform_.translation_.x = basePos_.x + std::cos(behaviorTimer_ * freq) * 3.0f;
+		worldTransform_.translation_.y = basePos_.y + std::sin(behaviorTimer_ * freq) * moveAmpY;
+
+		if (behaviorTimer_ >= 120 / speedMultiplier) {
+			// Rootへ戻るときも基準更新（ワープ防止）
+			basePos_ = worldTransform_.translation_;
+			behavior_ = Behavior::kRoot;
+			behaviorTimer_ = 0;
+		}
+	} break;
 	}
 
-	// 行列＋色を定数バッファに転送
+	// 画面外保険（std::clampが使える前提：<algorithm> + C++17）
+	worldTransform_.translation_.y = std::clamp(worldTransform_.translation_.y, -3.0f, 8.0f);
+
 	WorldTransformUpdate(worldTransform_);
-	
-	//通常状態
-	model_->Draw(worldTransform_, *camera_);
 }
 
+void Enemy::FireSpreadShot(std::list<FunnelBullet*>& bullets) {
+	// 3方向（扇状）に弾を発射
+	// プレイヤーの方向を向く処理を入れるとさらに強いが、まずは「手前」に撃つ
+	Vector3 baseVelocity = {0.0f, 0.0f, -0.5f}; // 奥から手前へ
+	// 敵はZ奥(-方向)にいるので、手前(+方向)へ撃つならZはプラスだが、カメラ設定による
+	// ※既存コードを見る限り PlayerBulletは (0,0,1) で進んでいるので、敵弾は (0,0,-1) かもしれない
+	// ひとまずカメラ方向（手前）に向かってくると仮定して
+	//baseVelocity = {0.0f, 0.0f, 0.5f}; // ★逆なら -0.5f に修正してください
+
+	// 3発生成
+	for (int i = -1; i <= 1; ++i) {
+		FunnelBullet* newBullet = new FunnelBullet();
+
+		// 速度ベクトルを少し回転させる（拡散ショット）
+		Vector3 vel = baseVelocity;
+		vel.x += i * 0.2f; // X成分をずらす
+
+		// 初期化（敵の位置から発射）
+		newBullet->Initialize(bulletModel_, worldTransform_.translation_, vel);
+
+		// リストに追加
+		bullets.push_back(newBullet);
+	}
+}
+
+// Drawなどは変更なし
+void Enemy::Draw() {
+	if (isDead_ || !model_ || !camera_)
+		return;
+	if (flashTimer_ > 0 && (flashTimer_ % 2) == 0) {
+		model_->Draw(worldTransform_, *camera_);
+	} else if (flashTimer_ <= 0) {
+		model_->Draw(worldTransform_, *camera_);
+	}
+}
 void Enemy::OnHit(int damage) {
 
 	if (isDead_) {
@@ -84,8 +150,9 @@ AABB Enemy::GetAABB() const {
 	AABB box{};
 	const Vector3& pos = worldTransform_.translation_;
 
-	box.min = {pos.x - halfSize_.x, pos.y - halfSize_.y, pos.z - halfSize_.z};
-	box.max = {pos.x + halfSize_.x, pos.y + halfSize_.y, pos.z + halfSize_.z};
+	box.min = {pos.x - halfSize.x, pos.y - halfSize.y, pos.z - halfSize.z};
+	box.max = {pos.x + halfSize.x, pos.y + halfSize.y, pos.z + halfSize.z};
+
 
 	return box;
 }

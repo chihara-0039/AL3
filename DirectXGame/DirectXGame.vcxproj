@@ -73,6 +73,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>KamataEngine.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/ignore:4049 %(AdditionalOptions)</AdditionalOptions>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>
@@ -112,6 +114,7 @@
     <ClCompile Include="FunnelBullet.cpp" />
     <ClCompile Include="GameOverScene.cpp" />
     <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="HpHud.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Player.cpp" />
@@ -202,6 +205,7 @@
     <ClInclude Include="FunnelBullet.h" />
     <ClInclude Include="GameOverScene.h" />
     <ClInclude Include="GameScene.h" />
+    <ClInclude Include="HpHud.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerBullet.h" />

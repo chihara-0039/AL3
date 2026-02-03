@@ -14,7 +14,7 @@ public:
 private:
 	KamataEngine::Camera camera_;
 	Skydome* skydome_ = nullptr;
-
-	uint32_t gameOverTex_ = 0;
-	KamataEngine::Sprite* gameOverSprite_ = nullptr;
+	KamataEngine::Model* gameOverModel_ = nullptr;
+	KamataEngine::WorldTransform gameOverWT_;
+	
 };

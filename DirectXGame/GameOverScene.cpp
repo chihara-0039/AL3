@@ -16,6 +16,9 @@ void GameOverScene::Initialize() {
 	skydome_ = new Skydome();
 	skydome_->Initialize(&camera_);
 	skydome_->SetRadius(200.0f);
+
+	// ゲームオーバー画像の読み込みobj
+	gameOverModel_ = Model::CreateFromOBJ("GameOverFont");
 }
 
 void GameOverScene::Update() {
@@ -34,12 +37,18 @@ void GameOverScene::Draw3D() {
 	if (skydome_) {
 		skydome_->Draw();
 	}
+
+	// ゲームオーバーモデルの描画
+	gameOverModel_->Draw(gameOverWT_, camera_);
 }
 
 void GameOverScene::Finalize() {
 	// リソース解放
 	delete skydome_;
 	skydome_ = nullptr;
+
+	delete gameOverModel_;
+	gameOverModel_ = nullptr;
 }
 
 void GameOverScene::Draw2D() {
