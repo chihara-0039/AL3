@@ -1,5 +1,10 @@
 #pragma once
 #include "KamataEngine.h"
+#include <cmath>
+
+namespace MyMath { // 名前が被らないように独自の空間を作るか、グローバルに置く
+void WorldTransformUpdate(KamataEngine::WorldTransform& worldTransform);
+}
 
 /// AL3サンプルプログラム用の数学ライブラリ。
 /// MT3準拠で、KamataEngine内部の数学ライブラリと重複する。
