@@ -41,6 +41,7 @@ struct AABB {
 	Vector3 max;
 };
 
+
 // 02_14 29枚目 単項演算子オーバーロード
 Vector3 operator+(const Vector3& v);
 Vector3 operator-(const Vector3& v);
